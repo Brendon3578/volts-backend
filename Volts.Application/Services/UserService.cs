@@ -1,0 +1,93 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Volts.Application.DTOs.User;
+using Volts.Application.Interfaces;
+using Volts.Domain.Entities;
+using Volts.Domain.Interfaces;
+
+namespace Volts.Application.Services
+{
+    public class UserService : IUserService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+
+        public UserService(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
+        {
+            var users = await _unitOfWork.Users.GetAllAsync();
+            return users.Select(MapToDto);
+        }
+
+        public async Task<UserDto?> GetUserByIdAsync(string id)
+        {
+            var user = await _unitOfWork.Users.GetByIdAsync(id);
+            return user != null ? MapToDto(user) : null;
+        }
+
+        public async Task<UserDto?> GetUserByEmailAsync(string email)
+        {
+            var user = await _unitOfWork.Users.GetByEmailAsync(email);
+            return user != null ? MapToDto(user) : null;
+        }
+
+        public async Task<UserDto> CreateUserAsync(CreateUserDto dto)
+        {
+            var user = new User
+            {
+                Email = dto.Email,
+                Name = dto.Name,
+                Phone = dto.Phone,
+                Bio = dto.Bio
+            };
+
+            await _unitOfWork.Users.AddAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            return MapToDto(user);
+        }
+
+        public async Task<UserDto> UpdateUserAsync(string id, UpdateUserDto dto)
+        {
+            var user = await _unitOfWork.Users.GetByIdAsync(id);
+
+            if (user == null)
+                throw new KeyNotFoundException($"User with ID {id} not found");
+
+            if (dto.Name != null) user.Name = dto.Name;
+            if (dto.Phone != null) user.Phone = dto.Phone;
+            if (dto.Bio != null) user.Bio = dto.Bio;
+
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            return MapToDto(user);
+        }
+
+        public async Task DeleteUserAsync(string id)
+        {
+            await _unitOfWork.Users.DeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        private static UserDto MapToDto(User user)
+        {
+            return new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Phone = user.Phone,
+                Bio = user.Bio,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt
+            };
+        }
+    }
+}
