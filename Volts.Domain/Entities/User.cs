@@ -8,7 +8,7 @@ namespace Volts.Domain.Entities
         public string Email { get; set; } = string.Empty;
         public string? Phone { get; set; }
         public string? Bio { get; set; }
-        public string? Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
 
         // Navigation properties

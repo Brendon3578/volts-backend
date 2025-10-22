@@ -28,7 +28,7 @@ namespace Volts.Api.Controllers
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetMe()
+        public async Task<ActionResult<UserDto>> GetMe()
         {
             try
             {
@@ -48,11 +48,7 @@ namespace Volts.Api.Controllers
                     return NotFound(new { message = "Usuário não encontrado" });
                 }
 
-                return Ok(new
-                {
-                    message = "Dados do usuário",
-                    data = user
-                });
+                return Ok(user);
             }
             catch (Exception ex)
             {

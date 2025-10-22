@@ -8,8 +8,8 @@ namespace Volts.Domain.Enums
 {
     public enum OrganizationRoleEnum
     {
-        OWNER,
         ADMIN,
+        LEADER,
         MEMBER
     }
 }
