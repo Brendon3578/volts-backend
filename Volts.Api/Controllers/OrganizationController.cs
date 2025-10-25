@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Volts.Api.Extensions;
+using Volts.Application.DTOs.Group;
 using Volts.Application.DTOs.Organization;
 using Volts.Application.Interfaces;
 using Volts.Domain.Enums;
@@ -14,10 +15,12 @@ namespace Volts.Api.Controllers
     public class OrganizationsController : ControllerBase
     {
         private readonly IOrganizationService _organizationService;
+        private readonly IGroupService _groupService;
 
-        public OrganizationsController(IOrganizationService organizationService)
+        public OrganizationsController(IOrganizationService organizationService, IGroupService groupService)
         {
             _organizationService = organizationService;
+            _groupService = groupService;
         }
 
         [HttpGet]
@@ -36,6 +39,22 @@ namespace Volts.Api.Controllers
 
             return Ok(organization);
         }
+
+        [HttpGet("{id}/groups")]
+        public async Task<ActionResult<IEnumerable<GroupDto>>> GetGroupsByOrganizationId(string id)
+        {
+            var organization = await _organizationService.GetOrganizationByIdAsync(id);
+
+            if (organization == null)
+                return NotFound();
+
+
+            var groups = await _groupService.GetAllByOrganizationIdAsync(organization.Id);
+
+            return Ok(groups);
+        }
+
+
 
         [HttpGet("creator/{creatorId}")]
         [Authorize]
@@ -61,7 +80,7 @@ namespace Volts.Api.Controllers
 
         }
 
-            [HttpPost]
+        [HttpPost]
         [Authorize]
         public async Task<ActionResult<OrganizationDto>> Create([FromBody] CreateOrganizationDto dto)
         {
@@ -114,6 +133,30 @@ namespace Volts.Api.Controllers
 
             await _organizationService.DeleteOrganizationAsync(id);
             return NoContent();
+        }
+
+        [HttpPost("{id}/join")]
+        [Authorize]
+        public async Task<IActionResult> Join(string id)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            await _organizationService.JoinAsync(id, userId);
+            return Ok();
+        }
+
+        [HttpPost("{id}/leave")]
+        [Authorize]
+        public async Task<IActionResult> Leave(string id)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            await _organizationService.LeaveAsync(id, userId);
+            return Ok();
         }
 
         private async Task<bool> IsLeaderOrAdmin(string userId, string organizationId)

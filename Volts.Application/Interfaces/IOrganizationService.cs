@@ -24,5 +24,9 @@ namespace Volts.Application.Interfaces
 
         // permissões
         Task<bool> UserHasPermissionAsync(string userId, string organizationId, IEnumerable<OrganizationRoleEnum> allowedRoles);
+
+        // Join / Leave
+        Task JoinAsync(string organizationId, string userId);
+        Task LeaveAsync(string organizationId, string userId);
     }
 }

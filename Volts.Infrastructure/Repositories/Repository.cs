@@ -67,5 +67,11 @@ namespace Volts.Infrastructure.Repositories
             _dbSet.Update(entity);
             return Task.CompletedTask;
         }
+
+        public virtual Task UpdateRangeAsync(IEnumerable<T> entities)
+        {
+            _dbSet.UpdateRange(entities);
+            return Task.CompletedTask;
+        }
     }
 }

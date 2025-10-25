@@ -9,6 +9,7 @@ using Volts.Application.Services;
 using Volts.Domain.Interfaces;
 using Volts.Infrastructure.Data;
 using Volts.Infrastructure.UnitOfWork;
+using Volts.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,16 +19,17 @@ builder.Services.AddControllers();
 
 // Configurar DbContext com SQLite
 builder.Services.AddDbContext<VoltsDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+ options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+builder.Services.AddScoped<IGroupService, GroupService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"] ??
-    throw new InvalidOperationException("JWT SecretKey não configurada");
+ throw new InvalidOperationException("JWT SecretKey não configurada");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -77,15 +79,15 @@ builder.Services.AddSwaggerGen(options =>
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
+        new OpenApiSecurityScheme
+        {
+        Reference = new OpenApiReference
+        {
+        Type = ReferenceType.SecurityScheme,
+        Id = "Bearer"
+        }
+        },
+        Array.Empty<string>()
         }
     });
 });
@@ -107,6 +109,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Register global exception middleware as first middleware
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 

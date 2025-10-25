@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Volts.Application.DTOs.Organization;
 using Volts.Application.Interfaces;
+using Volts.Application.Exceptions;
 using Volts.Domain.Entities;
 using Volts.Domain.Enums;
 using Volts.Domain.Interfaces;
@@ -40,7 +41,6 @@ namespace Volts.Application.Services
 
         public async Task<OrganizationDto> CreateOrganizationAsync(CreateOrganizationDto dto, string createdById)
         {
-
             var userExists = await _unitOfWork.Users.ExistsAsync(createdById);
 
             if (userExists == false)
@@ -163,10 +163,101 @@ namespace Volts.Application.Services
             var organizations = await _unitOfWork.Organizations
                 .FindAsync(org => organizationIds.Contains(org.Id));
 
-            //  Mapeia para DTOs
+            // Mapeia para DTOs
             var organizationDtos = organizations.Select(MapToDto).ToList();
 
             return organizationDtos;
+        }
+
+        // Join / Leave implementations
+        public async Task JoinAsync(string organizationId, string userId)
+        {
+            var organization = await _unitOfWork.Organizations.GetByIdAsync(organizationId)
+                ?? throw new NotFoundException("Organization not found");
+
+            var existing = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, organizationId);
+
+            if (existing != null) return; // already member, idempotent
+
+            var membership = new OrganizationMember
+            {
+                UserId = userId,
+                OrganizationId = organizationId,
+                Role = OrganizationRoleEnum.MEMBER,
+                JoinedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.OrganizationMembers.AddAsync(membership);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task LeaveAsync(string organizationId, string userId)
+        {
+            var organization = await _unitOfWork.Organizations.GetByIdAsync(organizationId)
+                ?? throw new NotFoundException("Organization not found");
+
+            var membership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, organizationId);
+            if (membership == null)
+                return; // idempotent
+
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                // Remove o membro que saiu
+                await _unitOfWork.OrganizationMembers.DeleteAsync(membership.Id);
+
+                // Pega os membros restantes
+                var remainingMembers = await _unitOfWork.OrganizationMembers.FindAsync(m => m.OrganizationId == organizationId);
+
+                // Se não sobrou ninguém, deleta a organização
+                if (!remainingMembers.Any())
+                {
+                    await DeleteOrganizationIfEmptyAsync(organizationId);
+                }
+                else
+                {
+                    // Se não há ADMINs, promove LEADERs a ADMIN
+                    await PromoteLeadersIfNoAdminsAsync(remainingMembers);
+                }
+
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deleta a organização se não houver membros restantes.
+        /// </summary>
+        private async Task DeleteOrganizationIfEmptyAsync(string organizationId)
+        {
+            await _unitOfWork.Organizations.DeleteAsync(organizationId);
+        }
+
+        /// <summary>
+        /// Se não houver ADMINs, promove todos os LEADERs a ADMINs.
+        /// </summary>
+        private async Task PromoteLeadersIfNoAdminsAsync(IEnumerable<OrganizationMember> members)
+        {
+            bool hasAdmins = members.Any(m => m.Role == OrganizationRoleEnum.ADMIN);
+            if (hasAdmins)
+                return;
+
+            var leaders = members
+                .Where(m => m.Role == OrganizationRoleEnum.LEADER)
+                .ToList();
+
+            if (leaders.Count == 0)
+                return;
+
+            foreach (var leader in leaders)
+                leader.Role = OrganizationRoleEnum.ADMIN;
+
+            await _unitOfWork.OrganizationMembers.UpdateRangeAsync(leaders);
         }
     }
 }
