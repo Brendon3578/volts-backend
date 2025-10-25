@@ -154,7 +154,7 @@ namespace Volts.Application.Services
             }
         }
 
-        private async Task<bool> UserHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
+        public async Task<bool> UserHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
         {
             var member = (await _unitOfWork.GroupMembers
                 .FindOneAsync(gm => gm.UserId == userId && gm.GroupId == groupId));
@@ -167,10 +167,7 @@ namespace Volts.Application.Services
         public async Task<bool> IsGroupLeaderOrCoordinator(string userId, string groupId)
         {
             var hasPermission = await UserHasPermissionAsync(userId, groupId,
-            [
-                GroupRoleEnum.GROUP_LEADER,
-                GroupRoleEnum.COORDINATOR
-            ]);
+            [GroupRoleEnum.GROUP_LEADER, GroupRoleEnum.COORDINATOR]);
 
             return hasPermission;
         }

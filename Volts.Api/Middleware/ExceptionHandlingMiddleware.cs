@@ -39,12 +39,14 @@ namespace Volts.Api.Middleware
                 NotFoundException => StatusCodes.Status404NotFound,
                 UnauthorizedAccessException => StatusCodes.Status403Forbidden,
                 ArgumentException => StatusCodes.Status400BadRequest,
+                UserHasNotPermissionException => StatusCodes.Status401Unauthorized,
                 _ => StatusCodes.Status500InternalServerError
             };
 
             string message = exception switch
             {
                 NotFoundException => exception.Message ?? "Resource not found",
+                UserHasNotPermissionException => exception.Message ?? "User has not allowed permission",
                 UnauthorizedAccessException => exception.Message ?? "Forbidden",
                 ArgumentException => exception.Message ?? "Bad request",
                 _ => "An unexpected error occurred"
