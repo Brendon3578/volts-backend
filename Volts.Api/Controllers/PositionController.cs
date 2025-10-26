@@ -4,11 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volts.Api.Extensions;
 using Volts.Application.DTOs.Position;
-using Volts.Application.Exceptions;
 using Volts.Application.Interfaces;
-using Volts.Application.Services;
-using Volts.Domain.Entities;
-using Volts.Domain.Enums;
 
 namespace Volts.Api.Controllers
 {
@@ -28,9 +24,7 @@ namespace Volts.Api.Controllers
         public async Task<ActionResult<IEnumerable<PositionDto>>> GetByGroupId(string id)
         {
             var positions = await _positionService.GetByGroupIdAsync(id);
-
             return Ok(positions);
-
         }
 
         [HttpPost]
@@ -38,26 +32,17 @@ namespace Volts.Api.Controllers
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inv·lido" });
-
-            // permission check in controller via service helper
-            var hasPermission = await _positionService.IsGroupLeaderOrCoordinator(userId, dto.GroupId);
-            if (!hasPermission) return Forbid();
+                return Unauthorized(new { message = "Token inv√°lido" });
 
             var createdPosition = await _positionService.CreateAsync(dto, userId);
-
             return Ok(createdPosition);
-
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<PositionDto>> GetById(string id)
         {
-            var pos = await _positionService.GetByIdAsync(id);
-
-            if (pos == null) return NotFound();
-
-            return Ok(pos);
+            var position = await _positionService.GetByIdAsync(id);
+            return Ok(position);
         }
 
         [HttpPut("{id}")]
@@ -65,22 +50,10 @@ namespace Volts.Api.Controllers
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inv·lido" });
-
-            // check permission using service helper
-            var position = await _positionService.GetByIdAsync(id);
-
-            if (position == null)
-                return NotFound();
-
-            var hasPermission = await _positionService.IsGroupLeaderOrCoordinator(userId, position.GroupId);
-            if (!hasPermission) return Forbid();
-
-
+                return Unauthorized(new { message = "Token inv√°lido" });
 
             var updated = await _positionService.UpdateAsync(id, dto, userId);
             return Ok(updated);
-
         }
 
         [HttpDelete("{id}")]
@@ -88,18 +61,10 @@ namespace Volts.Api.Controllers
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inv·lido" });
-
-            var position = await _positionService.GetByIdAsync(id);
-            if (position == null) return NotFound();
-
-            var hasPermission = await _positionService.IsGroupLeaderOrCoordinator(userId, position.GroupId);
-            if (!hasPermission) return Forbid();
-
+                return Unauthorized(new { message = "Token inv√°lido" });
 
             await _positionService.DeleteAsync(id, userId);
             return NoContent();
-
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volts.Application.DTOs.Organization;
 using Volts.Application.Interfaces;
@@ -27,10 +26,13 @@ namespace Volts.Application.Services
             return organizations.Select(MapToDto);
         }
 
-        public async Task<OrganizationDto?> GetOrganizationByIdAsync(string id)
+        public async Task<OrganizationDto> GetOrganizationByIdAsync(string id)
         {
             var organization = await _unitOfWork.Organizations.GetByIdAsync(id);
-            return organization != null ? MapToDto(organization) : null;
+            if (organization == null)
+                throw new NotFoundException($"Organization with ID {id} not found");
+                
+            return MapToDto(organization);
         }
 
         public async Task<IEnumerable<OrganizationDto>> GetOrganizationsByCreatorAsync(string creatorId)
@@ -45,9 +47,8 @@ namespace Volts.Application.Services
 
             if (userExists == false)
             {
-                throw new KeyNotFoundException($"User with ID not found");
+                throw new NotFoundException($"User with ID not found");
             }
-
 
             // atomicidade
             await _unitOfWork.BeginTransactionAsync();
@@ -63,7 +64,6 @@ namespace Volts.Application.Services
                     Address = dto.Address,
                     CreatedById = createdById
                 };
-
 
                 await _unitOfWork.Organizations.AddAsync(organization);
                 await _unitOfWork.SaveChangesAsync();
@@ -82,21 +82,21 @@ namespace Volts.Application.Services
                 await _unitOfWork.CommitTransactionAsync();
 
                 return MapToDto(organization);
-
             }
             catch (Exception)
             {
-
                 await _unitOfWork.RollbackTransactionAsync();
                 throw;
             }
         }
 
-        public async Task<OrganizationDto> UpdateOrganizationAsync(string id, UpdateOrganizationDto dto)
+        public async Task<OrganizationDto> UpdateOrganizationAsync(string id, UpdateOrganizationDto dto, string userId)
         {
             var organization = await _unitOfWork.Organizations.GetByIdAsync(id);
             if (organization == null)
-                throw new KeyNotFoundException($"Organization with ID {id} not found");
+                throw new NotFoundException($"Organization with ID {id} not found");
+
+            await ValidateUserPermissionAsync(userId, id, new[] { OrganizationRoleEnum.ADMIN, OrganizationRoleEnum.LEADER });
 
             if (dto.Name != null) organization.Name = dto.Name;
             if (dto.Description != null) organization.Description = dto.Description;
@@ -110,8 +110,14 @@ namespace Volts.Application.Services
             return MapToDto(organization);
         }
 
-        public async Task DeleteOrganizationAsync(string id)
+        public async Task DeleteOrganizationAsync(string id, string userId)
         {
+            var organization = await _unitOfWork.Organizations.GetByIdAsync(id);
+            if (organization == null)
+                throw new NotFoundException($"Organization with ID {id} not found");
+
+            await ValidateUserPermissionAsync(userId, id, new[] { OrganizationRoleEnum.ADMIN });
+
             await _unitOfWork.Organizations.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
         }
@@ -132,15 +138,21 @@ namespace Volts.Application.Services
             };
         }
 
-        public async Task<bool> UserHasPermissionAsync(string userId, string organizationId, IEnumerable<OrganizationRoleEnum> allowedRoles)
+        private async Task<bool> UserHasPermissionAsync(string userId, string organizationId, IEnumerable<OrganizationRoleEnum> allowedRoles)
         {
             var member = (await _unitOfWork.OrganizationMembers
                 .FindOneAsync(om => om.UserId == userId && om.OrganizationId == organizationId));
 
             if (member == null) return false;
 
-
             return allowedRoles.Contains(member.Role);
+        }
+        
+        private async Task ValidateUserPermissionAsync(string userId, string organizationId, IEnumerable<OrganizationRoleEnum> allowedRoles)
+        {
+            bool hasPermission = await UserHasPermissionAsync(userId, organizationId, allowedRoles);
+            if (!hasPermission)
+                throw new UserHasNotPermissionException("User does not have permission to perform this action");
         }
 
         public async Task<IEnumerable<OrganizationDto>> GetOrganizationsForCurrentUserAsync(string userId)

@@ -16,7 +16,7 @@ namespace Volts.Domain.Interfaces
         IPositionRepository Positions { get; }
         IShiftRepository Shifts { get; }
         IShiftPositionRepository ShiftPositions { get; }
-        IShiftVolunteerRepository ShiftVolunteers { get; }
+        IShiftPositionAssignmentRepository ShiftPositionAssignment { get; }
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();

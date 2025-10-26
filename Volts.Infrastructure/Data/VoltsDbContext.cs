@@ -23,7 +23,7 @@ namespace Volts.Infrastructure.Data
         public DbSet<Position> Positions { get; set; }
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<ShiftPosition> ShiftPositions { get; set; }
-        public DbSet<ShiftVolunteer> ShiftVolunteers { get; set; }
+        public DbSet<ShiftPositionAssignment> ShiftPositionAssignments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -182,10 +182,10 @@ namespace Volts.Infrastructure.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // ShiftVolunteer Configuration
-            modelBuilder.Entity<ShiftVolunteer>(entity =>
+            // ShiftPositionAssignment Configuration
+            modelBuilder.Entity<ShiftPositionAssignment>(entity =>
             {
-                entity.ToTable("shift_volunteers");
+                entity.ToTable("shift_position_assignment");
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => new { e.UserId, e.ShiftPositionId }).IsUnique();
                 entity.HasIndex(e => e.UserId);
@@ -193,7 +193,7 @@ namespace Volts.Infrastructure.Data
                 entity.HasIndex(e => new { e.ShiftPositionId, e.Status });
 
                 entity.HasOne(e => e.User)
-                    .WithMany(u => u.ShiftVolunteers)
+                    .WithMany(u => u.ShiftPositionAssignment)
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
 

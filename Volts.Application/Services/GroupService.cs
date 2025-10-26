@@ -36,12 +36,13 @@ namespace Volts.Application.Services
             return groups.Select(g => MapToDto(g));
         }
 
-        public async Task<GroupDto?> GetByIdAsync(string id)
-        {
-            var group = await _unitOfWork.Groups.GetByIdAsync(id);
+        public async Task<GroupDto> GetByIdAsync(string id)
+    {
+        var group = await _unitOfWork.Groups.GetByIdAsync(id)
+            ?? throw new NotFoundException("Group not found");
 
-            return group == null ? null : MapToDto(group);
-        }
+        return MapToDto(group);
+    }
 
         public async Task<GroupDto> CreateAsync(CreateGroupDto dto, string createdById)
         {
@@ -82,7 +83,7 @@ namespace Volts.Application.Services
 
                 await _unitOfWork.GroupMembers.AddAsync(groupMembership);
 
-                // Aqui não chamamos SaveChangesAsync de novo ainda.
+                // Aqui nï¿½o chamamos SaveChangesAsync de novo ainda.
                 // O CommitTransactionAsync vai cuidar disso internamente.
                 await _unitOfWork.CommitTransactionAsync();
 
@@ -123,8 +124,8 @@ namespace Volts.Application.Services
             var group = await _unitOfWork.Groups.GetByIdAsync(id)
                 ?? throw new NotFoundException("Group not found");
 
-            var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, id)
-                ?? throw new UnauthorizedAccessException("User is not a member of the group");
+            var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, group.Id)
+                ?? throw new UserHasNotPermissionException("User is not a member of the group");
 
             await _unitOfWork.Groups.DeleteAsync(id);
 
@@ -156,7 +157,7 @@ namespace Volts.Application.Services
                 ?? throw new NotFoundException("Group not exists");
 
             var organizationMembership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, existingGroup.OrganizationId)
-                ?? throw new UnauthorizedAccessException("User is not member of this organization");
+                ?? throw new UserHasNotPermissionException("User is not member of this organization");
 
             var membership = new GroupMember
             {
@@ -182,10 +183,10 @@ namespace Volts.Application.Services
 
             if (isInviterMember != null)
             {
-                throw new UnauthorizedAccessException("Inviter is not member of this group!");
+                throw new UserHasNotPermissionException("Inviter is not member of this group!");
             }
 
-            // aqui nao precisa validar inviterId pois na teoria ele já está autenticado
+            // aqui nao precisa validar inviterId pois na teoria ele jï¿½ estï¿½ autenticado
 
             var membership = new GroupMember
             {
@@ -240,7 +241,7 @@ namespace Volts.Application.Services
             UpdatedAt = g.UpdatedAt
         };
 
-        public async Task<bool> UserGroupHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
+        private async Task<bool> UserGroupHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
         {
             var groupMembership = (await _unitOfWork.GroupMembers
                 .FindOneAsync(gm => gm.UserId == userId && gm.GroupId == groupId));
@@ -249,6 +250,18 @@ namespace Volts.Application.Services
                 return false;
 
             return allowedRoles.Contains(groupMembership.Role);
+        }
+        
+        private async Task ValidateUserPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
+        {
+            bool hasPermission = await UserGroupHasPermissionAsync(userId, groupId, allowedRoles);
+            if (!hasPermission)
+                throw new UserHasNotPermissionException("User does not have the required permissions for this operation");
+        }
+        
+        private async Task<bool> IsGroupLeaderOrCoordinator(string userId, string groupId)
+        {
+            return await UserGroupHasPermissionAsync(userId, groupId, new[] { GroupRoleEnum.GROUP_LEADER, GroupRoleEnum.COORDINATOR });
         }
 
 

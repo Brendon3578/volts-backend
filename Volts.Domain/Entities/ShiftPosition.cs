@@ -10,6 +10,6 @@
         // Navigation properties
         public virtual Shift Shift { get; set; } = null!;
         public virtual Position Position { get; set; } = null!;
-        public virtual ICollection<ShiftVolunteer> Volunteers { get; set; } = new List<ShiftVolunteer>();
+        public virtual ICollection<ShiftPositionAssignment> Volunteers { get; set; } = new List<ShiftPositionAssignment>();
     }
 }

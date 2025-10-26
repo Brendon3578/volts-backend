@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volts.Application.DTOs.Group;
 using Volts.Application.DTOs.Position;
-using Volts.Domain.Enums;
 
 namespace Volts.Application.Interfaces
 {
@@ -10,22 +9,14 @@ namespace Volts.Application.Interfaces
     {
         Task<IEnumerable<GroupDto>> GetAllAsync();
         Task<IEnumerable<GroupDto>> GetAllByOrganizationIdAsync(string organizationId);
-        Task<GroupDto?> GetByIdAsync(string id);
+        Task<GroupDto> GetByIdAsync(string id);
         Task<GroupDto> CreateAsync(CreateGroupDto dto, string createdById);
         Task<GroupDto> UpdateAsync(string id, UpdateGroupDto dto, string userId);
         Task DeleteAsync(string id, string userId);
-
         Task<IEnumerable<GroupMemberDto>> GetMembersAsync(string groupId);
         Task JoinAsync(string groupId, string userId);
-
-
         Task InviteUserAsync(string groupId, string userId, InviteUserGroupDto inviteDto);
-
         Task LeaveAsync(string groupId, string userId);
-
         Task<IEnumerable<PositionDto>> GetPositionsAsync(string groupId);
-
-        Task<bool> UserGroupHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles);
-
     }
 }

@@ -38,21 +38,21 @@ namespace Volts.Application.Services
             });
         }
 
-        public async Task<PositionDto?> GetByIdAsync(string id)
-        {
-            var position = await _unitOfWork.Positions.GetByIdAsync(id);
-            if (position == null) return null;
+        public async Task<PositionDto> GetByIdAsync(string id)
+    {
+        var position = await _unitOfWork.Positions.GetByIdAsync(id)
+            ?? throw new NotFoundException("Position not found");
 
-            return new PositionDto
-            {
-                Id = position.Id,
-                Name = position.Name,
-                Description = position.Description,
-                GroupId = position.GroupId,
-                CreatedAt = position.CreatedAt,
-                UpdatedAt = position.UpdatedAt
-            };
-        }
+        return new PositionDto
+        {
+            Id = position.Id,
+            Name = position.Name,
+            Description = position.Description,
+            GroupId = position.GroupId,
+            CreatedAt = position.CreatedAt,
+            UpdatedAt = position.UpdatedAt
+        };
+    }
 
         public async Task<PositionDto> CreateAsync(CreatePositionDto dto, string userId)
         {
@@ -96,12 +96,11 @@ namespace Volts.Application.Services
 
             // check permissions on the position's group
             var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, position.GroupId);
-
             if (membership == null)
-                throw new UnauthorizedAccessException("User is not a member of the group");
+                throw new UserHasNotPermissionException("User is not a member of the group");
 
             if (membership.Role != GroupRoleEnum.GROUP_LEADER && membership.Role != GroupRoleEnum.COORDINATOR)
-                throw new UnauthorizedAccessException("Insufficient role to update position");
+                throw new UserHasNotPermissionException("Insufficient role to update position");
 
             if (dto.Name != null) position.Name = dto.Name;
             if (dto.Description != null) position.Description = dto.Description;
@@ -136,10 +135,10 @@ namespace Volts.Application.Services
 
             var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, position.GroupId);
             if (membership == null)
-                throw new UnauthorizedAccessException("User is not a member of the group");
+                throw new UserHasNotPermissionException("User is not a member of the group");
 
             if (membership.Role != GroupRoleEnum.GROUP_LEADER && membership.Role != GroupRoleEnum.COORDINATOR)
-                throw new UnauthorizedAccessException("Insufficient role to delete position");
+                throw new UserHasNotPermissionException("Insufficient role to delete position");
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -154,7 +153,7 @@ namespace Volts.Application.Services
             }
         }
 
-        public async Task<bool> UserHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
+        private async Task<bool> UserHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
         {
             var member = (await _unitOfWork.GroupMembers
                 .FindOneAsync(gm => gm.UserId == userId && gm.GroupId == groupId));
@@ -164,12 +163,17 @@ namespace Volts.Application.Services
             return allowedRoles.Contains(member.Role);
         }
 
-        public async Task<bool> IsGroupLeaderOrCoordinator(string userId, string groupId)
+        private async Task<bool> IsGroupLeaderOrCoordinator(string userId, string groupId)
         {
-            var hasPermission = await UserHasPermissionAsync(userId, groupId,
+            return await UserHasPermissionAsync(userId, groupId,
             [GroupRoleEnum.GROUP_LEADER, GroupRoleEnum.COORDINATOR]);
-
-            return hasPermission;
+        }
+        
+        private async Task ValidateUserPermissionAsync(string userId, string positionId, IEnumerable<GroupRoleEnum> allowedRoles)
+        {
+            bool hasPermission = await UserHasPermissionAsync(userId, positionId, allowedRoles);
+            if (!hasPermission)
+                throw new UserHasNotPermissionException("User does not have the required permissions for this operation");
         }
     }
 }

@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volts.Application.DTOs.Group;
+using Volts.Application.DTOs.Position;
 using Volts.Application.Interfaces;
 using Volts.Api.Extensions;
-using Volts.Domain.Enums;
-using Volts.Application.DTOs.Position;
 
 namespace Volts.Api.Controllers
 {
@@ -22,22 +21,17 @@ namespace Volts.Api.Controllers
             _groupService = groupService;
         }
 
-
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GroupDto>>> GetAll()
         {
             var groups = await _groupService.GetAllAsync();
-
             return Ok(groups);
         }
-
-
 
         [HttpGet("{id}")]
         public async Task<ActionResult<GroupDto>> GetById(string id)
         {
             var group = await _groupService.GetByIdAsync(id);
-            if (group == null) return NotFound();
             return Ok(group);
         }
 
@@ -45,11 +39,10 @@ namespace Volts.Api.Controllers
         public async Task<ActionResult<GroupDto>> Create([FromBody] CreateGroupDto dto)
         {
             var userId = User.GetUserId();
-
-            if (string.IsNullOrEmpty(userId)) return Unauthorized(new { message = "Token inv·lido" });
+            if (string.IsNullOrEmpty(userId)) 
+                return Unauthorized(new { message = "Token inv√°lido" });
 
             var created = await _groupService.CreateAsync(dto, userId);
-
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
@@ -57,18 +50,10 @@ namespace Volts.Api.Controllers
         public async Task<ActionResult<GroupDto>> Update(string id, [FromBody] UpdateGroupDto dto)
         {
             var userId = User.GetUserId();
-
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inv·lido" });
-
-            var hasPermission = await IsCoordinatorOrGroupLeader(userId, id);
-
-            if (hasPermission == false)
-                return Forbid("VocÍ n„o tem permiss„o para atualizar esse grupo");
-
+                return Unauthorized(new { message = "Token inv√°lido" });
 
             var updated = await _groupService.UpdateAsync(id, dto, userId);
-
             return Ok(updated);
         }
 
@@ -76,35 +61,17 @@ namespace Volts.Api.Controllers
         public async Task<IActionResult> Delete(string id)
         {
             var userId = User.GetUserId();
-            if (string.IsNullOrEmpty(userId)) return Unauthorized(new { message = "Token inv·lido" });
+            if (string.IsNullOrEmpty(userId)) 
+                return Unauthorized(new { message = "Token inv√°lido" });
 
-
-            var hasPermission = await IsCoordinatorOrGroupLeader(userId, id);
-
-            if (hasPermission == false)
-                return Forbid("VocÍ n„o tem permiss„o para apagar esse grupo");
-
-
-            try
-            {
-                await _groupService.DeleteAsync(id, userId);
-                return NoContent();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Forbid();
-            }
+            await _groupService.DeleteAsync(id, userId);
+            return NoContent();
         }
 
         [HttpGet("{id}/members")]
         public async Task<ActionResult<IEnumerable<GroupMemberDto>>> GetMembers(string id)
         {
             var members = await _groupService.GetMembersAsync(id);
-
             return Ok(members);
         }
 
@@ -112,12 +79,10 @@ namespace Volts.Api.Controllers
         public async Task<IActionResult> Join(string id)
         {
             var userId = User.GetUserId();
-
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inv·lido" });
+                return Unauthorized(new { message = "Token inv√°lido" });
 
             await _groupService.JoinAsync(id, userId);
-
             return Ok();
         }
 
@@ -125,26 +90,21 @@ namespace Volts.Api.Controllers
         public async Task<IActionResult> InviteUser(string id, [FromBody] InviteUserGroupDto inviteDto)
         {
             var userId = User.GetUserId();
-
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inv·lido" });
+                return Unauthorized(new { message = "Token inv√°lido" });
 
             await _groupService.InviteUserAsync(id, userId, inviteDto);
-
             return Ok();
         }
-
 
         [HttpPost("{id}/leave")]
         public async Task<IActionResult> Leave(string id)
         {
             var userId = User.GetUserId();
-
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inv·lido" });
+                return Unauthorized(new { message = "Token inv√°lido" });
 
             await _groupService.LeaveAsync(id, userId);
-
             return Ok();
         }
 
@@ -153,16 +113,6 @@ namespace Volts.Api.Controllers
         {
             var positions = await _groupService.GetPositionsAsync(id);
             return Ok(positions);
-        }
-
-        private async Task<bool> IsCoordinatorOrGroupLeader(string userId, string groupId)
-        {
-            var hasPermission = await _groupService.UserGroupHasPermissionAsync(userId, groupId, [
-                GroupRoleEnum.GROUP_LEADER,
-                GroupRoleEnum.COORDINATOR,
-            ]);
-
-            return hasPermission;
         }
     }
 }

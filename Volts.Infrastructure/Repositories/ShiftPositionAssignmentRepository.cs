@@ -11,11 +11,11 @@ using Volts.Infrastructure.Data;
 
 namespace Volts.Infrastructure.Repositories
 {
-    public class ShiftVolunteerRepository : Repository<ShiftVolunteer>, IShiftVolunteerRepository
+    public class ShiftPositionAssignmentRepository : Repository<ShiftPositionAssignment>, IShiftPositionAssignmentRepository
     {
-        public ShiftVolunteerRepository(VoltsDbContext context) : base(context) { }
+        public ShiftPositionAssignmentRepository(VoltsDbContext context) : base(context) { }
 
-        public async Task<IEnumerable<ShiftVolunteer>> GetByUserIdAsync(string userId)
+        public async Task<IEnumerable<ShiftPositionAssignment>> GetByUserIdAsync(string userId)
         {
             return await _dbSet
                 .Include(sv => sv.ShiftPosition)
@@ -24,7 +24,7 @@ namespace Volts.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<ShiftVolunteer>> GetByShiftPositionIdAsync(string shiftPositionId)
+        public async Task<IEnumerable<ShiftPositionAssignment>> GetByShiftPositionIdAsync(string shiftPositionId)
         {
             return await _dbSet
                 .Include(sv => sv.User)
@@ -32,7 +32,7 @@ namespace Volts.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<ShiftVolunteer>> GetByStatusAsync(VolunteerStatusEnum status)
+        public async Task<IEnumerable<ShiftPositionAssignment>> GetByStatusAsync(VolunteerStatusEnum status)
         {
             return await _dbSet
                 .Include(sv => sv.User)
@@ -41,7 +41,7 @@ namespace Volts.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<ShiftVolunteer?> GetVolunteerApplicationAsync(string userId, string shiftPositionId)
+        public async Task<ShiftPositionAssignment?> GetVolunteerApplicationAsync(string userId, string shiftPositionId)
         {
             return await _dbSet
                 .FirstOrDefaultAsync(sv => sv.UserId == userId && sv.ShiftPositionId == shiftPositionId);

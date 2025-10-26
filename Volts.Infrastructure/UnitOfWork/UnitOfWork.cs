@@ -23,7 +23,7 @@ namespace Volts.Infrastructure.UnitOfWork
         public IPositionRepository Positions { get; }
         public IShiftRepository Shifts { get; }
         public IShiftPositionRepository ShiftPositions { get; }
-        public IShiftVolunteerRepository ShiftVolunteers { get; }
+        public IShiftPositionAssignmentRepository ShiftPositionAssignment { get; }
 
         public UnitOfWork(VoltsDbContext context)
         {
@@ -36,7 +36,7 @@ namespace Volts.Infrastructure.UnitOfWork
             Positions = new PositionRepository(_context);
             Shifts = new ShiftRepository(_context);
             ShiftPositions = new ShiftPositionRepository(_context);
-            ShiftVolunteers = new ShiftVolunteerRepository(_context);
+            ShiftPositionAssignment = new ShiftPositionAssignmentRepository(_context);
         }
 
         public async Task<int> SaveChangesAsync()

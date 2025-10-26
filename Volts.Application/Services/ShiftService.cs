@@ -29,10 +29,12 @@ namespace Volts.Application.Services
             return shifts.Select(MapToDto);
         }
 
-        public async Task<ShiftDto?> GetByIdAsync(string id)
+        public async Task<ShiftDto> GetByIdAsync(string id)
         {
-            var shift = await _unitOfWork.Shifts.GetByIdAsync(id);
-            return shift == null ? null : MapToDto(shift);
+            var shift = await _unitOfWork.Shifts.GetByIdAsync(id)
+                ?? throw new NotFoundException("Shift not found");
+                
+            return MapToDto(shift);
         }
 
         public async Task<ShiftDto> CreateAsync(CreateShiftDto dto, string userId)
@@ -123,5 +125,4 @@ namespace Volts.Application.Services
             };
         }
     }
-
 }

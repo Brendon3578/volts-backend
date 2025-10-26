@@ -2,7 +2,7 @@
 
 namespace Volts.Domain.Entities
 {
-    public class ShiftVolunteer : BaseEntity
+    public class ShiftPositionAssignment : BaseEntity
     {
         public string UserId { get; set; } = string.Empty;
         public string ShiftPositionId { get; set; } = string.Empty;

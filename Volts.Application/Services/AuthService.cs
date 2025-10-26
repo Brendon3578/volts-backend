@@ -1,4 +1,4 @@
-﻿using BCrypt.Net;
+using BCrypt.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using Volts.Application.DTOs.Authentication;
 using Volts.Application.DTOs.User;
+using Volts.Application.Exceptions;
 using Volts.Application.Interfaces;
 using Volts.Domain.Entities;
 using Volts.Domain.Interfaces;
@@ -64,7 +65,7 @@ namespace Volts.Application.Services
 
             if (user == null || VerifyPassword(loginDto.Password, user.Password) == false)
             {
-                throw new UnauthorizedAccessException("Email ou senha inválidos");
+                throw new UserHasNotPermissionException("Email ou senha inválidos");
             }
 
             // Gerar token
