@@ -31,7 +31,7 @@ namespace Volts.Api.Controllers
         public async Task<ActionResult<ShiftDto>> Create([FromBody] CreateShiftDto dto)
         {
             var userId = User.GetUserId();
-            if (string.IsNullOrEmpty(userId)) 
+            if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "Token inválido" });
 
             var created = await _shiftService.CreateAsync(dto, userId);
@@ -49,7 +49,7 @@ namespace Volts.Api.Controllers
         public async Task<ActionResult<ShiftDto>> Update(string id, [FromBody] UpdateShiftDto dto)
         {
             var userId = User.GetUserId();
-            if (string.IsNullOrEmpty(userId)) 
+            if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "Token inválido" });
 
             var updated = await _shiftService.UpdateAsync(id, dto, userId);

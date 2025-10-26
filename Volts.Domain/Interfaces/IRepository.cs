@@ -14,6 +14,7 @@ namespace Volts.Domain.Interfaces
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
         Task<T?> FindOneAsync(Expression<Func<T, bool>> predicate);
         Task<T> AddAsync(T entity);
+        Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities);
         Task UpdateAsync(T entity);
         Task UpdateRangeAsync(IEnumerable<T> entities);
         Task DeleteAsync(string id);

@@ -15,11 +15,12 @@ namespace Volts.Infrastructure.Repositories
     {
         public ShiftRepository(VoltsDbContext context) : base(context) { }
 
-        public async Task<IEnumerable<Shift>> GetByGroupIdAsync(string groupId)
+        public async Task<IEnumerable<Shift>> GetByGroupIdWithPositionsAsync(string groupId)
         {
             return await _dbSet
+                .Include(s => s.ShiftPositions)
+                    .ThenInclude(sp => sp.Position)
                 .Where(s => s.GroupId == groupId)
-                .OrderBy(s => s.Date)
                 .ToListAsync();
         }
 

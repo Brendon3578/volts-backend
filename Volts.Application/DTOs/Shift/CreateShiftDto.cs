@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +14,6 @@ namespace Volts.Application.DTOs.Shift
         public string? Title { get; set; }
         public string? Notes { get; set; }
         public string GroupId { get; set; } = string.Empty;
+        public List<CreateShiftPositionDto> Positions { get; set; } = new List<CreateShiftPositionDto>();
     }
 }

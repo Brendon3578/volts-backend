@@ -27,6 +27,12 @@ namespace Volts.Infrastructure.Repositories
             return entity;
         }
 
+        public virtual async Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities)
+        {
+            await _dbSet.AddRangeAsync(entities);
+            return entities;
+        }
+
         public virtual async Task DeleteAsync(string id)
         {
             var entity = await GetByIdAsync(id);

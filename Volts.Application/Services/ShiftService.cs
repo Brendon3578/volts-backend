@@ -25,41 +25,80 @@ namespace Volts.Application.Services
             var group = await _unitOfWork.Groups.GetByIdAsync(groupId)
                 ?? throw new NotFoundException("Group not found");
 
-            var shifts = await _unitOfWork.Shifts.GetByGroupIdAsync(groupId);
+            var shifts = await _unitOfWork.Shifts.GetByGroupIdWithPositionsAsync(groupId);
+
             return shifts.Select(MapToDto);
         }
 
         public async Task<ShiftDto> GetByIdAsync(string id)
         {
-            var shift = await _unitOfWork.Shifts.GetByIdAsync(id)
+            var shift = await _unitOfWork.Shifts.GetWithPositionsAsync(id)
                 ?? throw new NotFoundException("Shift not found");
-                
+
             return MapToDto(shift);
         }
+
 
         public async Task<ShiftDto> CreateAsync(CreateShiftDto dto, string userId)
         {
             var group = await _unitOfWork.Groups.GetByIdAsync(dto.GroupId)
                 ?? throw new NotFoundException("Group not found");
 
-            if (await IsGroupLeaderOrCoordinator(userId, dto.GroupId) == false)
+            if (!await IsGroupLeaderOrCoordinator(userId, dto.GroupId))
                 throw new UserHasNotPermissionException("User is not leader or coordinator");
 
-            var shift = new Shift
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
             {
-                Date = dto.Date,
-                StartTime = dto.StartTime,
-                EndTime = dto.EndTime,
-                Title = dto.Title,
-                Notes = dto.Notes,
-                GroupId = dto.GroupId,
-                Status = ShiftStatusEnum.OPEN
-            };
+                var shift = new Shift
+                {
+                    Date = dto.Date,
+                    StartTime = dto.StartTime,
+                    EndTime = dto.EndTime,
+                    Title = dto.Title,
+                    Notes = dto.Notes,
+                    GroupId = dto.GroupId,
+                    Status = ShiftStatusEnum.OPEN
+                };
 
-            await _unitOfWork.Shifts.AddAsync(shift);
-            await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.Shifts.AddAsync(shift);
 
-            return MapToDto(shift);
+                // Cria as posições associadas
+                if (dto.Positions?.Any() == true)
+                {
+                    var shiftPositions = new List<ShiftPosition>();
+
+                    foreach (var positionDto in dto.Positions)
+                    {
+                        var positionExists = await _unitOfWork.Positions.ExistsAsync(positionDto.PositionId);
+                        if (!positionExists)
+                            throw new NotFoundException($"Position with ID {positionDto.PositionId} not found");
+
+                        shiftPositions.Add(new ShiftPosition
+                        {
+                            Shift = shift, // associação direta (EF vai preencher ShiftId)
+                            PositionId = positionDto.PositionId,
+                            RequiredCount = positionDto.RequiredCount,
+                            VolunteersCount = 0
+                        });
+                    }
+
+                    await _unitOfWork.ShiftPositions.AddRangeAsync(shiftPositions);
+                }
+
+                await _unitOfWork.CommitTransactionAsync();
+
+                var createdShift = await _unitOfWork.Shifts.GetWithPositionsAsync(shift.Id)
+                    ?? throw new NotFoundException("Created shift could not be retrieved after commit");
+
+                return MapToDto(createdShift);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public async Task<ShiftDto> UpdateAsync(string id, UpdateShiftDto dto, string userId)
@@ -70,17 +109,62 @@ namespace Volts.Application.Services
             if (await IsGroupLeaderOrCoordinator(userId, shift.GroupId) == false)
                 throw new UserHasNotPermissionException("User is not leader or coordinator");
 
-            if (dto.Date.HasValue) shift.Date = dto.Date.Value;
-            if (dto.StartTime.HasValue) shift.StartTime = dto.StartTime.Value;
-            if (dto.EndTime.HasValue) shift.EndTime = dto.EndTime.Value;
-            if (!string.IsNullOrEmpty(dto.Title)) shift.Title = dto.Title;
-            if (!string.IsNullOrEmpty(dto.Notes)) shift.Notes = dto.Notes;
-            if (dto.Status.HasValue) shift.Status = dto.Status.Value;
+            await _unitOfWork.BeginTransactionAsync();
 
-            await _unitOfWork.Shifts.UpdateAsync(shift);
-            await _unitOfWork.SaveChangesAsync();
+            try
+            {
+                if (dto.Date.HasValue) shift.Date = dto.Date.Value;
+                if (dto.StartTime.HasValue) shift.StartTime = dto.StartTime.Value;
+                if (dto.EndTime.HasValue) shift.EndTime = dto.EndTime.Value;
+                if (!string.IsNullOrEmpty(dto.Title)) shift.Title = dto.Title;
+                if (!string.IsNullOrEmpty(dto.Notes)) shift.Notes = dto.Notes;
+                if (dto.Status.HasValue) shift.Status = dto.Status.Value;
 
-            return MapToDto(shift);
+                await _unitOfWork.Shifts.UpdateAsync(shift);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Atualizar as posições se fornecidas
+                if (dto.Positions != null)
+                {
+                    // Remover posições existentes
+                    var existingPositions = await _unitOfWork.ShiftPositions.FindAsync(sp => sp.ShiftId == id);
+                    foreach (var position in existingPositions)
+                    {
+                        await _unitOfWork.ShiftPositions.DeleteAsync(position.Id);
+                    }
+                    await _unitOfWork.SaveChangesAsync();
+
+                    // Adicionar novas posições
+                    foreach (var positionDto in dto.Positions)
+                    {
+                        var position = await _unitOfWork.Positions.GetByIdAsync(positionDto.PositionId)
+                            ?? throw new NotFoundException($"Position with ID {positionDto.PositionId} not found");
+
+                        var shiftPosition = new ShiftPosition
+                        {
+                            ShiftId = shift.Id,
+                            PositionId = positionDto.PositionId,
+                            RequiredCount = positionDto.RequiredCount,
+                            VolunteersCount = 0
+                        };
+
+                        await _unitOfWork.ShiftPositions.AddAsync(shiftPosition);
+                    }
+                    await _unitOfWork.SaveChangesAsync();
+                }
+
+                await _unitOfWork.CommitTransactionAsync();
+
+                var updatedShift = await _unitOfWork.Shifts.GetWithPositionsAsync(shift.Id)
+                    ?? throw new NotFoundException("Created shift could not be retrieved after commit");
+
+                return MapToDto(updatedShift);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public async Task DeleteAsync(string id, string userId)
@@ -121,7 +205,16 @@ namespace Volts.Application.Services
                 Status = shift.Status,
                 GroupId = shift.GroupId,
                 CreatedAt = shift.CreatedAt,
-                UpdatedAt = shift.UpdatedAt
+                UpdatedAt = shift.UpdatedAt,
+                Positions = shift.ShiftPositions?
+                    .Select(sp => new ShiftPositionDto
+                    {
+                        Id = sp.Id,
+                        PositionId = sp.PositionId,
+                        PositionName = sp.Position?.Name ?? string.Empty,
+                        RequiredCount = sp.RequiredCount,
+                        VolunteersCount = sp.VolunteersCount
+                    }).ToList() ?? [] // evitar null se nao tiver nada
             };
         }
     }

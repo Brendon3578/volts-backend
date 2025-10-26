@@ -29,5 +29,7 @@ namespace Volts.Infrastructure.Repositories
                     .ThenInclude(v => v.User)
                 .FirstOrDefaultAsync(sp => sp.Id == id);
         }
+
+
     }
 }
