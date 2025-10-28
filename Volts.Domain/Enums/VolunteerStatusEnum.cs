@@ -10,6 +10,6 @@ namespace Volts.Domain.Enums
     {
         CONFIRMED,
         PENDING,
-        CANCELLED
+        CANCELED
     }
 }

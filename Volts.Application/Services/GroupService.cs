@@ -119,6 +119,9 @@ namespace Volts.Application.Services
             return MapToDto(group);
         }
 
+        // TODO: validar regras de negócio de quando sair apagar o grupo se só tiver um user
+
+        // TODO: ver se pode dar erro aqui
         public async Task DeleteAsync(string id, string userId)
         {
             var group = await _unitOfWork.Groups.GetByIdAsync(id)
@@ -127,6 +130,12 @@ namespace Volts.Application.Services
             var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, group.Id)
                 ?? throw new UserHasNotPermissionException("User is not a member of the group");
 
+            // só poder deletar se for não for volunteer, TODO: melhorar isso
+
+            if (membership.Role == GroupRoleEnum.VOLUNTEER)
+                throw new UserHasNotPermissionException("Only coordinator or group leader can delete a group");
+
+
             await _unitOfWork.Groups.DeleteAsync(id);
 
             await _unitOfWork.SaveChangesAsync();
@@ -134,6 +143,9 @@ namespace Volts.Application.Services
 
         public async Task<IEnumerable<GroupMemberDto>> GetMembersAsync(string groupId)
         {
+            var group = await _unitOfWork.Groups.GetByIdAsync(groupId)
+                ?? throw new NotFoundException("Group not found");
+
             var members = await _unitOfWork.GroupMembers.GetByGroupIdAsync(groupId);
             return members.Select(m => new GroupMemberDto
             {
