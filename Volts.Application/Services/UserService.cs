@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Volts.Application.DTOs.User;
+using Volts.Application.Exceptions;
 using Volts.Application.Interfaces;
 using Volts.Domain.Entities;
 using Volts.Domain.Interfaces;
@@ -76,7 +77,7 @@ namespace Volts.Application.Services
             await _unitOfWork.SaveChangesAsync();
         }
 
-        private static UserDto MapToDto(User user)
+        private UserDto MapToDto(User user)
         {
             return new UserDto
             {
@@ -88,6 +89,70 @@ namespace Volts.Application.Services
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             };
+        }
+
+        public async Task<List<UserOrganizationGroupsDto>> GetUserOrganizationsAndGroupsAsync(string userId)
+        {
+            // Verificar se o usuário existe
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
+            if (user == null)
+                throw new NotFoundException("Usuário não encontrado");
+
+            // Buscar todas as organizações do usuário
+            var organizationMembers = await _unitOfWork.OrganizationMembers.GetByUserIdAsync(userId);
+            
+            var result = new List<UserOrganizationGroupsDto>();
+            
+            foreach (var orgMember in organizationMembers)
+            {
+
+                var organization = orgMember.Organization;
+
+                if (organization == null) // gambiarra
+                    await _unitOfWork.Organizations.GetByIdAsync(orgMember.OrganizationId);
+                    
+                if (organization == null) continue;
+                
+                var orgDto = new UserOrganizationGroupsDto
+                {
+                    OrganizationId = organization.Id,
+                    OrganizationName = organization.Name,
+                    OrganizationDescription = organization.Description ?? string.Empty,
+                    OrganizationUserRole = orgMember.Role.ToString(),
+                    Groups = new List<UserGroupMemberDto>()
+                };
+                
+                // Buscar grupos do usuário nesta organização
+                var groupMembers = await _unitOfWork.GroupMembers.GetByUserAndOrganizationAsync(userId, organization.Id);
+                
+                foreach (var groupMember in groupMembers)
+                {
+                    var group = groupMember.Group;
+
+                    if (group == null) // gambiarra 2, na teoria nao precisa desse código, mas deixei por segurança
+                        group = await _unitOfWork.Groups.GetByIdAsync(groupMember.GroupId);
+
+                    if (group == null)
+                        continue;
+                    
+                    
+                    var groupDto = new UserGroupMemberDto
+                    {
+                        GroupId = group.Id,
+                        GroupName = group.Name,
+                        GroupDescription = group.Description ?? string.Empty,
+                        MemberId = groupMember.Id,
+                        MemberName = user.Name,
+                        MemberRole = groupMember.Role.ToString(),
+                    };
+                    
+                    orgDto.Groups.Add(groupDto);
+                }
+                
+                result.Add(orgDto);
+            }
+            
+            return result;
         }
     }
 }

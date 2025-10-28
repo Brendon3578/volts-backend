@@ -22,6 +22,16 @@ namespace Volts.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<GroupMember>> GetByUserAndOrganizationAsync(string userId, string organizationId)
+        {
+            return await _context.GroupMembers
+                .Include(gm => gm.Group)
+                    .ThenInclude(g => g.Organization)
+                .Include(gm => gm.User)
+                .Where(gm => gm.UserId == userId && gm.Group.OrganizationId == organizationId)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<GroupMember>> GetByUserIdAsync(string userId)
         {
             return await _dbSet
