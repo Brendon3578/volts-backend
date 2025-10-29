@@ -1,7 +1,5 @@
 # Volts Backend
 
-## Descrição do Domínio
-
 O Volts é um sistema de gerenciamento de voluntários para eventos e organizações. Ele permite que organizações criem grupos, escalas e posições, e que voluntários se inscrevam para trabalhar nessas posições.
 
 O sistema é utilizado por:
@@ -17,6 +15,118 @@ As principais entidades do sistema se relacionam da seguinte forma:
 - **Escalas (Shifts)**: Períodos de trabalho com data, hora e local definidos
 - **Posições (Positions)**: Funções específicas que podem ser ocupadas por voluntários
 - **Inscrições (ShiftPositionAssignments)**: Registros de voluntários inscritos para trabalhar em posições específicas
+
+## Modelo de Domínio do Volts
+
+O diagrama abaixo representa as principais entidades do sistema Volts e seus relacionamentos.
+
+```mermaid
+erDiagram
+    User {
+        string Id PK
+        string Name
+        string Email
+        string Password
+    }
+    
+    Organization {
+        string Id PK
+        string Name
+        string Description
+    }
+    
+    OrganizationMember {
+        string Id PK
+        string UserId FK
+        string OrganizationId FK
+        enum Role
+        datetime JoinedAt
+        string InvitedById
+    }
+    
+    Group {
+        string Id PK
+        string Name
+        string Description
+        string OrganizationId FK
+    }
+    
+    GroupMember {
+        string Id PK
+        string UserId FK
+        string GroupId FK
+        enum Role
+    }
+    
+    Position {
+        string Id PK
+        string Name
+        string Description
+        string GroupId FK
+    }
+    
+    Shift {
+        string Id PK
+        string Name
+        string Description
+        string Location
+        datetime StartDateTime
+        datetime EndDateTime
+        string GroupId FK
+        enum Status
+    }
+    
+    ShiftPosition {
+        string Id PK
+        string ShiftId FK
+        string PositionId FK
+        int RequiredCount
+        int VolunteersCount
+    }
+    
+    ShiftPositionAssignment {
+        string Id PK
+        string UserId FK
+        string ShiftPositionId FK
+        enum Status
+        string Notes
+        datetime AppliedAt
+        datetime ConfirmedAt
+        datetime RejectedAt
+    }
+    
+    User ||--o{ OrganizationMember : "pertence"
+    Organization ||--o{ OrganizationMember : "tem"
+    Organization ||--o{ Group : "tem"
+    Group ||--o{ Position : "tem"
+    User ||--o{ GroupMember : "pertence"
+    Group ||--o{ GroupMember : "tem"
+    Group ||--o{ Shift : "organiza"
+    Shift ||--o{ ShiftPosition : "tem"
+    Position ||--o{ ShiftPosition : "associada"
+    ShiftPosition ||--o{ ShiftPositionAssignment : "tem"
+    User ||--o{ ShiftPositionAssignment : "se inscreve"
+```
+
+## Descrição dos Relacionamentos
+
+1. **User - OrganizationMember**: Um usuário pode pertencer a várias organizações, e uma organização pode ter vários membros.
+
+2. **Organization - Group**: Uma organização pode ter vários grupos, mas um grupo pertence a apenas uma organização.
+
+3. **Organization - Position**: Uma organização pode definir várias posições, e cada posição pertence a uma organização.
+
+4. **User - GroupMember**: Um usuário pode ser membro de vários grupos, e um grupo pode ter vários membros.
+
+5. **Group - Shift**: Um grupo pode organizar várias escalas, e cada escala é organizada por um grupo.
+
+6. **Shift - ShiftPosition**: Uma escala pode ter várias posições, e cada posição de escala está associada a uma escala.
+
+7. **Position - ShiftPosition**: Uma posição pode ser usada em várias escalas, e cada posição de escala está associada a uma posição.
+
+8. **ShiftPosition - ShiftPositionAssignment**: Uma posição de escala pode ter várias inscrições de voluntários, e cada inscrição está associada a uma posição de escala.
+
+9. **User - ShiftPositionAssignment**: Um usuário pode se inscrever em várias posições de escala, e cada inscrição está associada a um usuário.
 
 ## Rotas da API
 
@@ -110,35 +220,28 @@ O projeto segue uma arquitetura em camadas:
 
 ### Passos para Execução
 
-1. Clone o repositório:
-
 ```bash
+# 1. Clone o repositório:
+
 git clone https://github.com/seu-usuario/volts-backend.git
+
 cd volts-backend
-```
 
-2. Restaure os pacotes:
+# 2. Restaure os pacotes:
 
-```bash
 dotnet restore
-```
 
-3. Execute as migrações do banco de dados:
+# 3. Execute as migrações do banco de dados:
 
-```bash
 cd Volts.Api
 dotnet ef database update
-```
 
-4. Execute o projeto:
+# 4. Execute o projeto:
 
-```bash
 dotnet run
-```
 
-5. Acesse a documentação da API:
+# 5. Acesse a documentação da API:
 
-```
 https://localhost:5001/swagger
 ```
 
