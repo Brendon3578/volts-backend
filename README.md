@@ -201,6 +201,31 @@ O projeto segue uma arquitetura em camadas:
 - **Entities (Volts.Domain)**: Definem o modelo de domínio e as regras de negócio
 - **DTOs (Volts.Application)**: Objetos de transferência de dados entre as camadas
 
+## 🔐 Controle de Acesso (RBAC)
+
+### Descrição Geral
+
+- O projeto utiliza RBAC (Role-Based Access Control) para controlar o que cada usuário pode fazer dentro da aplicação.
+- O controle é dividido entre níveis de organização e níveis de grupo, cada um com papéis e permissões específicos.
+
+### Papéis da Organização (OrganizationRoleEnum)
+
+- **ADMIN**: possui acesso total à organização. Pode gerenciar usuários, grupos e configurações.
+- **LEADER**: pode criar e gerenciar grupos dentro da organização.
+- **MEMBER**: participa de grupos, mas sem permissões administrativas.
+
+### Papéis do Grupo (GroupRoleEnum)
+
+- **GROUP_LEADER**: responsável por gerenciar o grupo. Pode criar posições e escalas.
+- **COORDINATOR**: auxilia o líder. Também pode criar e gerenciar posições e escalas.
+- **VOLUNTEER**: participa das escalas, podendo se inscrever em posições disponíveis.
+
+### Regras de Negócio Principais
+
+- **ADMIN** e **LEADER** podem criar grupos dentro da organização.
+- Dentro dos grupos, apenas **GROUP_LEADER** e **COORDINATOR** podem criar posições e escalas.
+- **VOLUNTEERS** podem visualizar e se inscrever nas posições das escalas.
+
 ## 🧰 Tecnologias Utilizadas
 
 - **Linguagem principal:** C#
