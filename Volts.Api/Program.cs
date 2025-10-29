@@ -1,15 +1,17 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Text;
+using Volts.Api.Middleware;
 using Volts.Application.Interfaces;
 using Volts.Application.Services;
 using Volts.Domain.Interfaces;
 using Volts.Infrastructure.Data;
 using Volts.Infrastructure.UnitOfWork;
-using Volts.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,13 +23,14 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<VoltsDbContext>(options =>
  options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>(); // todos os repositories estão aqui
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IShiftService, ShiftService>();
+builder.Services.AddScoped<IShiftPositionAssignmentService, ShiftPositionAssignmentService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"] ??
@@ -38,7 +41,6 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -82,17 +84,16 @@ builder.Services.AddSwaggerGen(options =>
     {
         {
         new OpenApiSecurityScheme
-        {
-        Reference = new OpenApiReference
-        {
-        Type = ReferenceType.SecurityScheme,
-        Id = "Bearer"
-        }
-        },
-        Array.Empty<string>()
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            []
         }
     });
 });
+
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy("API is running"));
 
 var app = builder.Build();
 
@@ -121,5 +122,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHealthChecks("/api/status");
 
 app.Run();
