@@ -20,6 +20,8 @@ As principais entidades do sistema se relacionam da seguinte forma:
 
 O diagrama abaixo representa as principais entidades do sistema Volts e seus relacionamentos.
 
+O código do diagrama pode ser visto por aqui: [Acessar diagrama feito com Mermaid](./mermaid.md)
+
 ```mermaid
 erDiagram
     User {
