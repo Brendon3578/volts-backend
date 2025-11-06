@@ -39,6 +39,8 @@ namespace Volts.Infrastructure.Data
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Phone).HasMaxLength(20);
                 entity.Property(e => e.Password).IsRequired();
+                entity.Property(e => e.Gender).IsRequired();
+                entity.Property(e => e.Birthdate).IsRequired();
             });
 
             // Organization Configuration

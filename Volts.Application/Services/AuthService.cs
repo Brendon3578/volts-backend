@@ -32,13 +32,29 @@ namespace Volts.Application.Services
                 throw new InvalidOperationException("Email já cadastrado!");
             }
 
+            var isPasswordConfirmed = registerDto.Password == registerDto.ConfirmPassword;
+
+            if (isPasswordConfirmed == false)
+            {
+                throw new InvalidOperationException("Senhas não conferem");
+            }
+
+            if (registerDto.AcceptedTerms == false)
+            {
+                throw new InvalidOperationException("Termos nao aceitos");
+            }
+
+
+
             var hashedPassword = HashPassword(registerDto.Password);
 
             var user = new User
             {
                 Name = registerDto.Name,
                 Email = registerDto.Email,
-                Password = hashedPassword
+                Password = hashedPassword,
+                Birthdate = registerDto.Birthdate,
+                Gender = registerDto.Gender,
             };
 
             await _unitOfWork.Users.AddAsync(user);
