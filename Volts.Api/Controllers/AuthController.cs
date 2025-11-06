@@ -51,7 +51,7 @@ namespace Volts.Api.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogWarning(ex, "Tentativa de cadastro com email duplicado: {Email}", registerDto.Email);
+                _logger.LogWarning(ex, $"Erro ao fazer o login: {ex.Message}");
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)

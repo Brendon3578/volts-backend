@@ -1,23 +1,35 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Text;
-using Volts.Api.Middleware;
 using Volts.Application.Interfaces;
 using Volts.Application.Services;
 using Volts.Domain.Interfaces;
 using Volts.Infrastructure.Data;
 using Volts.Infrastructure.UnitOfWork;
+using Volts.Api.Middleware;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+// CORS - allow dev frontend
+var devCorsPolicy = "DevCors";
+builder.Services.AddCors(options =>
+{
+ options.AddPolicy(devCorsPolicy, policy =>
+ {
+ policy.WithOrigins("http://localhost:5173")
+ .AllowAnyHeader()
+ .AllowAnyMethod()
+ .AllowCredentials();
+ });
+});
 
 // Configurar DbContext com SQLite
 builder.Services.AddDbContext<VoltsDbContext>(options =>
@@ -38,22 +50,22 @@ var secretKey = jwtSettings["SecretKey"] ??
 
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+ options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+ options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        ClockSkew = TimeSpan.Zero
-    };
+ options.TokenValidationParameters = new TokenValidationParameters
+ {
+ ValidateIssuer = true,
+ ValidateAudience = true,
+ ValidateLifetime = true,
+ ValidateIssuerSigningKey = true,
+ ValidIssuer = jwtSettings["Issuer"],
+ ValidAudience = jwtSettings["Audience"],
+ IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+ ClockSkew = TimeSpan.Zero
+ };
 });
 
 
@@ -62,34 +74,34 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "JWT Auth API",
-        Version = "v1",
-        Description = "API de autenticação com JWT, Repository Pattern e Unit of Work"
-    });
+ options.SwaggerDoc("v1", new OpenApiInfo
+ {
+ Title = "JWT Auth API",
+ Version = "v1",
+ Description = "API de autenticação com JWT, Repository Pattern e Unit of Work"
+ });
 
-    // Configurar autenticação JWT no Swagger
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Insira o token JWT no formato: Bearer {seu token}"
-    });
+ // Configurar autenticação JWT no Swagger
+ options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+ {
+ Name = "Authorization",
+ Type = SecuritySchemeType.Http,
+ Scheme = "bearer",
+ BearerFormat = "JWT",
+ In = ParameterLocation.Header,
+ Description = "Insira o token JWT no formato: Bearer {seu token}"
+ });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-        new OpenApiSecurityScheme
-            {
+ options.AddSecurityRequirement(new OpenApiSecurityRequirement
+ {
+ {
+ new OpenApiSecurityScheme
+ {
                 Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
+ },
             []
-        }
-    });
+ }
+ });
 });
 
 builder.Services.AddHealthChecks()
@@ -100,8 +112,8 @@ var app = builder.Build();
 // Criar banco de dados automaticamente
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<VoltsDbContext>();
-    db.Database.EnsureCreated();
+ var db = scope.ServiceProvider.GetRequiredService<VoltsDbContext>();
+ db.Database.EnsureCreated();
 }
 
 
@@ -109,12 +121,15 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+ app.UseSwagger();
+ app.UseSwaggerUI();
 }
 
 // Register global exception middleware as first middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Enable CORS for development
+app.UseCors(devCorsPolicy);
 
 app.UseHttpsRedirection();
 
@@ -122,7 +137,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.MapHealthChecks("/api/status");
 
 app.Run();

@@ -68,6 +68,9 @@ namespace Volts.Api.Controllers
         public async Task<ActionResult<List<UserOrganizationGroupsDto>>> GetUserOrganizationsAndGroups()
         {
             var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
             var result = await _userService.GetUserOrganizationsAndGroupsAsync(userId);
             return Ok(result);
         }
