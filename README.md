@@ -1,5 +1,14 @@
 # Volts Backend
 
+## Integrantes
+
+- Adriano Barros
+- Brendon Gomes
+- Elias Barbosa
+- Rafael Gonçalves
+
+## Descrição do Projeto
+
 O Volts é um sistema de gerenciamento de voluntários para eventos e organizações. Ele permite que organizações criem grupos, escalas e posições, e que voluntários se inscrevam para trabalhar nessas posições.
 
 O sistema é utilizado por:
