@@ -92,7 +92,7 @@ namespace Volts.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Tentativa de login falhou para: {Email}", loginDto.Email);
-                return Unauthorized(new { message = "Erro ao realizar Login!" });
+                return BadRequest(new { message = "Erro ao realizar Login!" });
             }
 
         }

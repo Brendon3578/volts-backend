@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Volts.Api.Attributes;
 using Volts.Api.Extensions;
 using Volts.Application.DTOs.Group;
 using Volts.Application.DTOs.User;
@@ -11,7 +12,7 @@ namespace Volts.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [NotLoggedAuthorize]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;

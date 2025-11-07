@@ -49,8 +49,8 @@ namespace Volts.Infrastructure.Data
                 entity.ToTable("organizations");
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.CreatedById);
-                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
-                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(256);
+                entity.Property(e => e.Email).HasMaxLength(255);
                 entity.Property(e => e.Phone).HasMaxLength(20);
 
                 entity.HasOne(e => e.CreatedBy)

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Volts.Api.Attributes;
 using Volts.Api.Extensions;
 using Volts.Application.DTOs.Group;
 using Volts.Application.DTOs.Organization;
@@ -48,7 +49,7 @@ namespace Volts.Api.Controllers
 
 
         [HttpGet("creator/{creatorId}")]
-        [Authorize]
+        [NotLoggedAuthorize]
         public async Task<ActionResult<IEnumerable<OrganizationDto>>> GetByCreator(string creatorId)
         {
             var organizations = await _organizationService.GetOrganizationsByCreatorAsync(creatorId);
@@ -56,7 +57,7 @@ namespace Volts.Api.Controllers
         }
 
         [HttpGet("me")]
-        [Authorize]
+        [NotLoggedAuthorize]
         public async Task<ActionResult<IEnumerable<OrganizationDto>>> GetOrganizationsForCurrentUserAsync()
         {
             var userId = User.GetUserId();
@@ -72,7 +73,7 @@ namespace Volts.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [NotLoggedAuthorize]
         public async Task<ActionResult<OrganizationDto>> Create([FromBody] CreateOrganizationDto dto)
         {
             var userId = User.GetUserId();
@@ -87,7 +88,7 @@ namespace Volts.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize]
+        [NotLoggedAuthorize]
         public async Task<ActionResult<OrganizationDto>> Update(string id, [FromBody] UpdateOrganizationDto dto)
         {
             var userId = User.GetUserId();
@@ -100,7 +101,7 @@ namespace Volts.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize]
+        [NotLoggedAuthorize]
         public async Task<IActionResult> Delete(string id)
         {
             var userId = User.GetUserId();
@@ -113,7 +114,7 @@ namespace Volts.Api.Controllers
         }
 
         [HttpPost("{id}/join")]
-        [Authorize]
+        [NotLoggedAuthorize]
         public async Task<IActionResult> Join(string id)
         {
             var userId = User.GetUserId();
@@ -125,7 +126,7 @@ namespace Volts.Api.Controllers
         }
 
         [HttpPost("{id}/leave")]
-        [Authorize]
+        [NotLoggedAuthorize]
         public async Task<IActionResult> Leave(string id)
         {
             var userId = User.GetUserId();
