@@ -11,7 +11,7 @@ namespace Volts.Application.DTOs.Organization
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public string Email { get; set; } = string.Empty;
+        public string? Email { get; set; }
         public string? Phone { get; set; }
         public string? Address { get; set; }
         public string CreatedById { get; set; } = string.Empty;

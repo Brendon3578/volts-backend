@@ -36,5 +36,13 @@ namespace Volts.Infrastructure.Repositories
                 .ThenInclude(m => m.User)
                 .FirstOrDefaultAsync(o => o.Id == id);
         }
+
+        public async Task<IEnumerable<Organization>> GetAvailableToEnter(string userId)
+        {
+            return await _dbSet
+                .Where(o => o.Members.All(m => m.UserId != userId))
+                .ToListAsync();
+        }
+
     }
 }

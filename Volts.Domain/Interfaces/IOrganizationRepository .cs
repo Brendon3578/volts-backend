@@ -12,6 +12,7 @@ namespace Volts.Domain.Interfaces
         Task<IEnumerable<Organization>> GetByCreatorIdAsync(string creatorId);
         Task<Organization?> GetWithMembersAsync(string id);
         Task<Organization?> GetWithGroupsAsync(string id);
+        Task<IEnumerable<Organization>> GetAvailableToEnter(string userId);
     }
 
 }

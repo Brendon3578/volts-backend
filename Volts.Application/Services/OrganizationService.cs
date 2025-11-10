@@ -26,6 +26,13 @@ namespace Volts.Application.Services
             return organizations.Select(MapToDto);
         }
 
+        public async Task<IEnumerable<OrganizationDto>> GetAllOrganizationsAvailableAsync(string userId)
+        {
+            var availableOrganizations = await _unitOfWork.Organizations.GetAvailableToEnter(userId);
+
+            return availableOrganizations.Select(MapToDto);
+        }
+
         public async Task<OrganizationDto> GetOrganizationByIdAsync(string id)
         {
             var organization = await _unitOfWork.Organizations.GetByIdAsync(id);
@@ -271,5 +278,7 @@ namespace Volts.Application.Services
 
             await _unitOfWork.OrganizationMembers.UpdateRangeAsync(leaders);
         }
+
+
     }
 }

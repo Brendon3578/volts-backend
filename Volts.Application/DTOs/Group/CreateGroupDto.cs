@@ -11,7 +11,6 @@ namespace Volts.Application.DTOs.Group
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string OrganizationId { get; set; } = string.Empty;
-        public string CreatedById { get; set; } = string.Empty;
         public string? Color { get; set; }
         public string? Icon { get; set; }
     }

@@ -43,6 +43,7 @@ namespace Volts.Api.Controllers
                 return Unauthorized(new { message = "Token inválido" });
 
             var created = await _groupService.CreateAsync(dto, userId);
+
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 

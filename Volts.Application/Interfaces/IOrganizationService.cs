@@ -7,6 +7,7 @@ namespace Volts.Application.Interfaces
     public interface IOrganizationService
     {
         Task<IEnumerable<OrganizationDto>> GetAllOrganizationsAsync();
+        Task<IEnumerable<OrganizationDto>> GetAllOrganizationsAvailableAsync(string userId);
         Task<OrganizationDto> GetOrganizationByIdAsync(string id);
         Task<IEnumerable<OrganizationDto>> GetOrganizationsByCreatorAsync(string creatorId);
         Task<OrganizationDto> CreateOrganizationAsync(CreateOrganizationDto dto, string createdById);

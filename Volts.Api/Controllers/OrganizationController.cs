@@ -31,6 +31,19 @@ namespace Volts.Api.Controllers
             return Ok(organizations);
         }
 
+        [HttpGet("available")]
+        [NotLoggedAuthorize]
+        public async Task<ActionResult<IEnumerable<OrganizationDto>>> GetAllAvailable()
+        {
+            var userId = User.GetUserId();
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var organizations = await _organizationService.GetAllOrganizationsAvailableAsync(userId);
+            return Ok(organizations);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<OrganizationDto>> GetById(string id)
         {
