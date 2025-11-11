@@ -9,7 +9,6 @@ using Volts.Domain.Enums;
 using Volts.Domain.Interfaces;
 using Volts.Application.Exceptions;
 using Volts.Application.DTOs.Position;
-using System.Runtime.InteropServices;
 
 namespace Volts.Application.Services
 {
@@ -37,12 +36,12 @@ namespace Volts.Application.Services
         }
 
         public async Task<GroupDto> GetByIdAsync(string id)
-    {
-        var group = await _unitOfWork.Groups.GetByIdAsync(id)
-            ?? throw new NotFoundException("Group not found");
+        {
+            var group = await _unitOfWork.Groups.GetByIdAsync(id)
+                ?? throw new NotFoundException("Group not found");
 
-        return MapToDto(group);
-    }
+            return MapToDto(group);
+        }
 
         public async Task<GroupDto> CreateAsync(CreateGroupDto dto, string createdById)
         {
@@ -146,14 +145,17 @@ namespace Volts.Application.Services
             var group = await _unitOfWork.Groups.GetByIdAsync(groupId)
                 ?? throw new NotFoundException("Group not found");
 
-            var members = await _unitOfWork.GroupMembers.GetByGroupIdAsync(groupId);
+            var members = await _unitOfWork.GroupMembers.GetWithUserByGroupIdAsync(groupId);
+
             return members.Select(m => new GroupMemberDto
             {
                 Id = m.Id,
                 UserId = m.UserId,
                 GroupId = m.GroupId,
                 Role = m.Role.ToString(),
-                JoinedAt = m.JoinedAt
+                JoinedAt = m.JoinedAt,
+                UserName = m.User.Name,
+                UserEmail = m.User.Email,
             });
         }
 
@@ -209,7 +211,7 @@ namespace Volts.Application.Services
                 AddedById = userId,
             };
 
-            await _unitOfWork.GroupMembers.AddAsync (membership);
+            await _unitOfWork.GroupMembers.AddAsync(membership);
             await _unitOfWork.SaveChangesAsync();
 
         }
@@ -240,6 +242,15 @@ namespace Volts.Application.Services
             });
         }
 
+        public async Task<GroupCompleteViewDto?> GetGroupCompleteViewByIdAsync(string id)
+        {
+            var group = await _unitOfWork.Groups.GetGroupCompleteViewByIdAsync(id);
+            if (group == null) return null;
+
+            // Calculate upcoming shifts (shifts that haven't happened yet)
+            return MapToCompleteViewDto(group);
+        }
+
         private static GroupDto MapToDto(Group g) => new GroupDto
         {
             Id = g.Id,
@@ -253,6 +264,28 @@ namespace Volts.Application.Services
             UpdatedAt = g.UpdatedAt
         };
 
+        private static GroupCompleteViewDto MapToCompleteViewDto(Group group)
+        {
+
+            var upcomingShifts = group.Shifts?.Count(s => s.Date >= DateTime.UtcNow) ?? 0;
+
+
+            return new GroupCompleteViewDto
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Description = group.Description,
+                OrganizationId = group.OrganizationId,
+                OrganizationName = group.Organization?.Name ?? string.Empty,
+                CreatedById = group.CreatedById,
+                CreatedAt = group.CreatedAt,
+                MemberCount = group.Members?.Count ?? 0,
+                UpcomingShiftsCount = upcomingShifts,
+                Color = group.Color,
+                Icon = group.Icon
+            };
+        }
+
         private async Task<bool> UserGroupHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
         {
             var groupMembership = (await _unitOfWork.GroupMembers
@@ -263,19 +296,26 @@ namespace Volts.Application.Services
 
             return allowedRoles.Contains(groupMembership.Role);
         }
-        
+
         private async Task ValidateUserPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
         {
             bool hasPermission = await UserGroupHasPermissionAsync(userId, groupId, allowedRoles);
             if (!hasPermission)
                 throw new UserHasNotPermissionException("User does not have the required permissions for this operation");
         }
-        
+
         private async Task<bool> IsGroupLeaderOrCoordinator(string userId, string groupId)
         {
             return await UserGroupHasPermissionAsync(userId, groupId, new[] { GroupRoleEnum.GROUP_LEADER, GroupRoleEnum.COORDINATOR });
         }
 
+        public async Task<IEnumerable<GroupCompleteViewDto>> GetGroupsCompleteViewByOrganizationidAsync(string organizationId)
+        {
+            var groups = await _unitOfWork.Groups
+                .GetGroupsCompleteViewByOrganizationidAsync(organizationId);
 
+
+            return groups.Select(MapToCompleteViewDto);
+        }
     }
 }

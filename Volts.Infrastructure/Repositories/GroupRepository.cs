@@ -42,5 +42,24 @@ namespace Volts.Infrastructure.Repositories
                 .Include(g => g.Positions)
                 .FirstOrDefaultAsync(g => g.Id == id);
         }
+
+        public async Task<Group?> GetGroupCompleteViewByIdAsync(string id)
+        {
+            return await _dbSet
+                .Include(g => g.Organization)
+                .Include(g => g.Members)
+                .Include(g => g.Shifts)
+                .FirstOrDefaultAsync(g => g.Id == id);
+        }
+
+        public async Task<IEnumerable<Group>> GetGroupsCompleteViewByOrganizationidAsync(string organizationId)
+        {
+            return await _dbSet
+                .Where(g => g.OrganizationId == organizationId)
+                .Include(g => g.Organization)
+                .Include(g => g.Members)
+                .Include(g => g.Shifts)
+                .ToListAsync();
+        }
     }
 }

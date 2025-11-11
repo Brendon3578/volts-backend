@@ -35,6 +35,14 @@ namespace Volts.Api.Controllers
             return Ok(group);
         }
 
+        [HttpGet("{id}/completeView")]
+        public async Task<ActionResult<GroupCompleteViewDto>> GetCompleteViewById(string id)
+        {
+            var group = await _groupService.GetGroupCompleteViewByIdAsync(id);
+            if (group == null) return NotFound();
+            return Ok(group);
+        }
+
         [HttpPost]
         public async Task<ActionResult<GroupDto>> Create([FromBody] CreateGroupDto dto)
         {

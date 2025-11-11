@@ -10,5 +10,7 @@ namespace Volts.Application.DTOs.Position
     {
         public string? Name { get; set; }
         public string? Description { get; set; }
+        public string GroupId { get; set; } = string.Empty;
+
     }
 }

@@ -54,8 +54,16 @@ namespace Volts.Api.Controllers
         [HttpGet("{id}/groups")]
         public async Task<ActionResult<IEnumerable<GroupDto>>> GetGroupsByOrganizationId(string id)
         {
-            var organization = await _organizationService.GetOrganizationByIdAsync(id);
-            var groups = await _groupService.GetAllByOrganizationIdAsync(organization.Id);
+            var groups = await _groupService.GetAllByOrganizationIdAsync(id);
+            return Ok(groups);
+        }
+
+
+        [HttpGet("{organizationId}/Groups/completeView")]
+        [NotLoggedAuthorize]
+        public async Task<ActionResult<GroupCompleteViewDto>> GetCompleteViewByOrganizationId(string organizationId)
+        {
+            var groups = await _groupService.GetGroupsCompleteViewByOrganizationidAsync(organizationId);
             return Ok(groups);
         }
 

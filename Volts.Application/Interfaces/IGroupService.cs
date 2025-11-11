@@ -18,5 +18,7 @@ namespace Volts.Application.Interfaces
         Task InviteUserAsync(string groupId, string userId, InviteUserGroupDto inviteDto);
         Task LeaveAsync(string groupId, string userId);
         Task<IEnumerable<PositionDto>> GetPositionsAsync(string groupId);
+        Task<GroupCompleteViewDto?> GetGroupCompleteViewByIdAsync(string id);
+        Task<IEnumerable<GroupCompleteViewDto>> GetGroupsCompleteViewByOrganizationidAsync(string organizationId);
     }
 }

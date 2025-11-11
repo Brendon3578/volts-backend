@@ -13,5 +13,8 @@ namespace Volts.Domain.Interfaces
         Task<Group?> GetWithMembersAsync(string id);
         Task<Group?> GetWithShiftsAsync(string id);
         Task<Group?> GetWithPositionsAsync(string id);
+        Task<Group?> GetGroupCompleteViewByIdAsync(string id);
+        Task<IEnumerable<Group>> GetGroupsCompleteViewByOrganizationidAsync(string organizationId);
+
     }
 }

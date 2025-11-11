@@ -14,7 +14,7 @@ namespace Volts.Infrastructure.Repositories
     {
         public GroupMemberRepository(VoltsDbContext context) : base(context) { }
 
-        public async Task<IEnumerable<GroupMember>> GetByGroupIdAsync(string groupId)
+        public async Task<IEnumerable<GroupMember>> GetWithUserByGroupIdAsync(string groupId)
         {
             return await _dbSet
                 .Include(gm => gm.User)
