@@ -193,7 +193,12 @@ namespace Volts.Application.Services
 
             if (existing != null) return;
 
-            var isInviterMember = await _unitOfWork.GroupMembers.GetMembershipAsync(inviteDto.InvitedId, groupId);
+            var invitedUser = await _unitOfWork.Users.GetByEmailAsync(inviteDto.InvitedEmail);
+
+            if (invitedUser == null)
+                throw new NotFoundException("User not found with this email");
+
+            var isInviterMember = await _unitOfWork.GroupMembers.GetMembershipAsync(invitedUser.Id, groupId);
 
             if (isInviterMember != null)
             {
@@ -204,7 +209,7 @@ namespace Volts.Application.Services
 
             var membership = new GroupMember
             {
-                UserId = inviteDto.InvitedId,
+                UserId = inviteDto.InvitedEmail,
                 GroupId = groupId,
                 Role = inviteDto.InviterRole,
                 JoinedAt = DateTime.UtcNow,
@@ -242,13 +247,13 @@ namespace Volts.Application.Services
             });
         }
 
-        public async Task<GroupCompleteViewDto?> GetGroupCompleteViewByIdAsync(string id)
+        public async Task<GroupCompleteViewDto?> GetGroupCompleteViewByIdAsync(string id, string userId)
         {
             var group = await _unitOfWork.Groups.GetGroupCompleteViewByIdAsync(id);
             if (group == null) return null;
 
             // Calculate upcoming shifts (shifts that haven't happened yet)
-            return MapToCompleteViewDto(group);
+            return MapToCompleteViewDto(group, userId);
         }
 
         private static GroupDto MapToDto(Group g) => new GroupDto
@@ -264,11 +269,13 @@ namespace Volts.Application.Services
             UpdatedAt = g.UpdatedAt
         };
 
-        private static GroupCompleteViewDto MapToCompleteViewDto(Group group)
+        private static GroupCompleteViewDto MapToCompleteViewDto(Group group, string userId)
         {
 
-            var upcomingShifts = group.Shifts?.Count(s => s.Date >= DateTime.UtcNow) ?? 0;
+            var upcomingShifts = group.Shifts?.Count(s => s.StartDate >= DateTime.UtcNow) ?? 0;
 
+            var currentUserMembership = group.Members.FirstOrDefault(m => m.UserId == userId);
+            var isCurrentUserJoinedGroup = currentUserMembership != null;
 
             return new GroupCompleteViewDto
             {
@@ -282,7 +289,9 @@ namespace Volts.Application.Services
                 MemberCount = group.Members?.Count ?? 0,
                 UpcomingShiftsCount = upcomingShifts,
                 Color = group.Color,
-                Icon = group.Icon
+                Icon = group.Icon,
+                IsCurrentUserJoined = isCurrentUserJoinedGroup,
+                CurrentUserRole = currentUserMembership?.Role.ToString() ?? string.Empty
             };
         }
 
@@ -309,13 +318,13 @@ namespace Volts.Application.Services
             return await UserGroupHasPermissionAsync(userId, groupId, new[] { GroupRoleEnum.GROUP_LEADER, GroupRoleEnum.COORDINATOR });
         }
 
-        public async Task<IEnumerable<GroupCompleteViewDto>> GetGroupsCompleteViewByOrganizationidAsync(string organizationId)
+        public async Task<IEnumerable<GroupCompleteViewDto>> GetGroupsCompleteViewByOrganizationidAsync(string organizationId, string userId)
         {
             var groups = await _unitOfWork.Groups
                 .GetGroupsCompleteViewByOrganizationidAsync(organizationId);
 
 
-            return groups.Select(MapToCompleteViewDto);
+            return groups.Select(g => MapToCompleteViewDto(g, userId));
         }
     }
 }

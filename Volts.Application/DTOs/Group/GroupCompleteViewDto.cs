@@ -15,5 +15,7 @@ namespace Volts.Application.DTOs.Group
         public int? UpcomingShiftsCount { get; set; }
         public string? Color { get; set; }
         public string? Icon { get; set; }
+        public bool IsCurrentUserJoined { get; set; }
+        public string CurrentUserRole { get; set; }
     }
 }

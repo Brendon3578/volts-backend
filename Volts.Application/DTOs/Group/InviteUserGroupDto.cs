@@ -9,7 +9,7 @@ namespace Volts.Application.DTOs.Group
 {
     public class InviteUserGroupDto
     {
-        public string InvitedId { get; set; } = string.Empty;
+        public string InvitedEmail { get; set; } = string.Empty;
         public GroupRoleEnum InviterRole;
     }
 }

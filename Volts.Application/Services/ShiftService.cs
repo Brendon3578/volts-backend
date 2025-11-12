@@ -53,9 +53,8 @@ namespace Volts.Application.Services
             {
                 var shift = new Shift
                 {
-                    Date = dto.Date,
-                    StartTime = dto.StartTime,
-                    EndTime = dto.EndTime,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
                     Title = dto.Title,
                     Notes = dto.Notes,
                     GroupId = dto.GroupId,
@@ -113,9 +112,8 @@ namespace Volts.Application.Services
 
             try
             {
-                if (dto.Date.HasValue) shift.Date = dto.Date.Value;
-                if (dto.StartTime.HasValue) shift.StartTime = dto.StartTime.Value;
-                if (dto.EndTime.HasValue) shift.EndTime = dto.EndTime.Value;
+                if (dto.StartDate.HasValue) shift.StartDate = dto.StartDate.Value;
+                if (dto.EndDate.HasValue) shift.EndDate = dto.EndDate.Value;
                 if (!string.IsNullOrEmpty(dto.Title)) shift.Title = dto.Title;
                 if (!string.IsNullOrEmpty(dto.Notes)) shift.Notes = dto.Notes;
                 if (dto.Status.HasValue) shift.Status = dto.Status.Value;
@@ -197,9 +195,8 @@ namespace Volts.Application.Services
             return new ShiftDto
             {
                 Id = shift.Id,
-                Date = shift.Date,
-                StartTime = shift.StartTime,
-                EndTime = shift.EndTime,
+                StartDate = shift.StartDate,
+                EndDate = shift.EndDate,
                 Title = shift.Title,
                 Notes = shift.Notes,
                 Status = shift.Status,

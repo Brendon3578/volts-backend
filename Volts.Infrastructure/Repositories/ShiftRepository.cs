@@ -27,8 +27,8 @@ namespace Volts.Infrastructure.Repositories
         public async Task<IEnumerable<Shift>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             return await _dbSet
-                .Where(s => s.Date >= startDate && s.Date <= endDate)
-                .OrderBy(s => s.Date)
+                .Where(s => s.StartDate >= startDate && s.StartDate <= endDate)
+                .OrderBy(s => s.StartDate)
                 .ToListAsync();
         }
 
@@ -36,7 +36,7 @@ namespace Volts.Infrastructure.Repositories
         {
             return await _dbSet
                 .Where(s => s.Status == status)
-                .OrderBy(s => s.Date)
+                .OrderBy(s => s.StartDate)
                 .ToListAsync();
         }
 

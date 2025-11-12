@@ -6,6 +6,7 @@ using Volts.Application.DTOs.Group;
 using Volts.Application.DTOs.Position;
 using Volts.Application.Interfaces;
 using Volts.Api.Extensions;
+using Volts.Api.Attributes;
 
 namespace Volts.Api.Controllers
 {
@@ -31,14 +32,20 @@ namespace Volts.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GroupDto>> GetById(string id)
         {
+
             var group = await _groupService.GetByIdAsync(id);
+
             return Ok(group);
         }
 
         [HttpGet("{id}/completeView")]
         public async Task<ActionResult<GroupCompleteViewDto>> GetCompleteViewById(string id)
         {
-            var group = await _groupService.GetGroupCompleteViewByIdAsync(id);
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var group = await _groupService.GetGroupCompleteViewByIdAsync(id, userId);
             if (group == null) return NotFound();
             return Ok(group);
         }

@@ -12,5 +12,7 @@ namespace Volts.Application.DTOs.Group
         public string? Description { get; set; }
         public string? Color { get; set; }
         public string? Icon { get; set; }
+        public string? OrganizationId { get; set; } = string.Empty; // não vai mudar aqui, deixei apenas para validação no front
+
     }
 }

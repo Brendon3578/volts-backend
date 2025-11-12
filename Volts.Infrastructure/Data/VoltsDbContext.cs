@@ -153,8 +153,8 @@ namespace Volts.Infrastructure.Data
                 entity.ToTable("shifts");
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.GroupId);
-                entity.HasIndex(e => e.Date);
-                entity.HasIndex(e => new { e.GroupId, e.Date });
+                entity.HasIndex(e => e.StartDate);
+                entity.HasIndex(e => new { e.GroupId, e.StartDate });
                 entity.HasIndex(e => new { e.GroupId, e.Status });
                 entity.Property(e => e.Title).HasMaxLength(200);
 
