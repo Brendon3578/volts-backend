@@ -289,6 +289,60 @@ namespace Volts.Application.Services
             }
         }
 
+        public async Task<OrganizationMemberDto> InviteMemberAsync(string organizationId, InviteUserOrganizationDto dto, string currentUserId)
+        {
+            if (string.IsNullOrWhiteSpace(dto.InvitedEmail))
+                throw new ArgumentException("InvitedEmail inválido");
+
+            // Validar permissão do usuário atual (ADMIN ou LEADER)
+            await ValidateUserPermissionAsync(currentUserId, organizationId, new[] { OrganizationRoleEnum.ADMIN, OrganizationRoleEnum.LEADER });
+
+            // Buscar usuário por email
+            var invitedUser = await _unitOfWork.Users.GetByEmailAsync(dto.InvitedEmail);
+            if (invitedUser == null)
+                throw new NotFoundException("Usuário não encontrado");
+
+            // Se já é membro, retornar idempotente
+            var existingMember = await _unitOfWork.OrganizationMembers.GetMembershipAsync(invitedUser.Id, organizationId);
+            if (existingMember != null)
+            {
+                return new OrganizationMemberDto
+                {
+                    Id = existingMember.Id,
+                    UserId = existingMember.UserId,
+                    OrganizationId = existingMember.OrganizationId,
+                    Role = existingMember.Role.ToString(),
+                    JoinedAt = existingMember.JoinedAt,
+                    UserName = invitedUser.Name,
+                    UserEmail = invitedUser.Email
+                };
+            }
+
+            // Papel padrão do convidado: MEMBER
+            var roleToAssign = OrganizationRoleEnum.MEMBER;
+
+            // Persistir relacionamento do novo membro
+            var membership = await _unitOfWork.OrganizationMembers.InviteMemberAsync(
+                organizationId,
+                invitedUser.Id,
+                currentUserId,
+                roleToAssign
+            );
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return new OrganizationMemberDto
+            {
+                Id = membership.Id,
+                UserId = membership.UserId,
+                OrganizationId = membership.OrganizationId,
+                Role = membership.Role.ToString(),
+                JoinedAt = membership.JoinedAt,
+                UserName = invitedUser.Name,
+                UserEmail = invitedUser.Email
+            };
+        }
+
         /// <summary>
         /// Deleta a organização se não houver membros restantes.
         /// </summary>

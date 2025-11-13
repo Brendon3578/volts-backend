@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +34,21 @@ namespace Volts.Infrastructure.Repositories
         {
             return await _dbSet
                 .FirstOrDefaultAsync(om => om.UserId == userId && om.OrganizationId == organizationId);
+        }
+
+        public async Task<OrganizationMember> InviteMemberAsync(string organizationId, string userId, string? invitedById, Volts.Domain.Enums.OrganizationRoleEnum role)
+        {
+            var membership = new OrganizationMember
+            {
+                OrganizationId = organizationId,
+                UserId = userId,
+                InvitedById = invitedById,
+                Role = role,
+                JoinedAt = DateTime.UtcNow
+            };
+
+            await _dbSet.AddAsync(membership);
+            return membership;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +12,6 @@ namespace Volts.Domain.Interfaces
         Task<IEnumerable<OrganizationMember>> GetByOrganizationIdAsync(string organizationId);
         Task<IEnumerable<OrganizationMember>> GetByUserIdAsync(string userId);
         Task<OrganizationMember?> GetMembershipAsync(string userId, string organizationId);
+        Task<OrganizationMember> InviteMemberAsync(string organizationId, string userId, string? invitedById, Volts.Domain.Enums.OrganizationRoleEnum role);
     }
 }

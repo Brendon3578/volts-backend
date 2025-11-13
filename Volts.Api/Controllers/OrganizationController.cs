@@ -24,6 +24,18 @@ namespace Volts.Api.Controllers
             _groupService = groupService;
         }
 
+        [HttpPost("{id}/invite-member")]
+        [NotLoggedAuthorize]
+        public async Task<ActionResult<OrganizationMemberDto>> InviteMember(string id, [FromBody] InviteUserOrganizationDto dto)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var result = await _organizationService.InviteMemberAsync(id, dto, userId);
+            return Ok(result);
+        }
+
         [HttpGet("{id}/completeView")]
         [NotLoggedAuthorize]
         public async Task<ActionResult<OrganizationCompleteViewDto>> GetCompleteViewById(string id)
