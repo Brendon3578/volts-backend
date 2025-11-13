@@ -16,5 +16,9 @@ namespace Volts.Application.Interfaces
         Task DeleteOrganizationAsync(string id, string userId);
         Task JoinAsync(string organizationId, string userId);
         Task LeaveAsync(string organizationId, string userId);
+        Task<OrganizationCompleteViewDto?> GetOrganizationCompleteViewByIdAsync(string id, string userId);
+        Task<IEnumerable<OrganizationCompleteViewDto>> GetOrganizationsCompleteViewAsync(string userId);
+        Task<IEnumerable<OrganizationMemberDto>> GetOrganizationMembersAsync(string organizationId);
+        Task ChangeOrganizationMemberRoleAsync(string organizationId, string memberId, string role, string currentUserId);
     }
 }

@@ -96,7 +96,7 @@ namespace Volts.Application.Services
             // Verificar se o usuário existe
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
             if (user == null)
-                throw new NotFoundException("Usuário não encontrado");
+                throw new UserHasNotPermissionException("Usuário não encontrado");
 
             // Buscar todas as organizações do usuário
             var organizationMembers = await _unitOfWork.OrganizationMembers.GetByUserIdAsync(userId);

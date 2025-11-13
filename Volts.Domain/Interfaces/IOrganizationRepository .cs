@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +13,7 @@ namespace Volts.Domain.Interfaces
         Task<Organization?> GetWithMembersAsync(string id);
         Task<Organization?> GetWithGroupsAsync(string id);
         Task<IEnumerable<Organization>> GetAvailableToEnter(string userId);
+        Task<IEnumerable<Organization>> GetAllWithMembersAsync();
     }
 
 }

@@ -24,6 +24,55 @@ namespace Volts.Api.Controllers
             _groupService = groupService;
         }
 
+        [HttpGet("{id}/completeView")]
+        [NotLoggedAuthorize]
+        public async Task<ActionResult<OrganizationCompleteViewDto>> GetCompleteViewById(string id)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var org = await _organizationService.GetOrganizationCompleteViewByIdAsync(id, userId);
+            if (org == null) return NotFound();
+            return Ok(org);
+        }
+
+        [HttpGet("completeView")]
+        [NotLoggedAuthorize]
+        public async Task<ActionResult<IEnumerable<OrganizationCompleteViewDto>>> GetCompleteViewList()
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var orgs = await _organizationService.GetOrganizationsCompleteViewAsync(userId);
+            return Ok(orgs);
+        }
+
+        [HttpGet("{organizationId}/members")]
+        [NotLoggedAuthorize]
+        public async Task<ActionResult<IEnumerable<OrganizationMemberDto>>> GetMembers(string organizationId)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var members = await _organizationService.GetOrganizationMembersAsync(organizationId);
+            return Ok(members);
+        }
+
+        [HttpPut("{organizationId}/members/{memberId}/role")]
+        [NotLoggedAuthorize]
+        public async Task<IActionResult> ChangeMemberRole(string organizationId, string memberId, [FromBody] ChangeOrganizationMemberRoleDto body)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            await _organizationService.ChangeOrganizationMemberRoleAsync(organizationId, memberId, body.Role, userId);
+            return Ok();
+        }
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrganizationDto>>> GetAll()
         {
@@ -61,9 +110,13 @@ namespace Volts.Api.Controllers
 
         [HttpGet("{organizationId}/Groups/completeView")]
         [NotLoggedAuthorize]
-        public async Task<ActionResult<GroupCompleteViewDto>> GetCompleteViewByOrganizationId(string organizationId)
+        public async Task<ActionResult<GroupCompleteViewDto>> GetGroupCompleteViewByOrganizationId(string organizationId)
         {
-            var groups = await _groupService.GetGroupsCompleteViewByOrganizationidAsync(organizationId);
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var groups = await _groupService.GetGroupsCompleteViewByOrganizationidAsync(organizationId, userId);
             return Ok(groups);
         }
 
@@ -158,6 +211,6 @@ namespace Volts.Api.Controllers
             return Ok();
         }
 
-
+        // TODO: fazer controller de organization member, obs: ao deletar um membro deve deletar o groupmember dele também
     }
 }

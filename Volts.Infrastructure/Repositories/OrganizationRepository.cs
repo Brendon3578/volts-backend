@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +35,14 @@ namespace Volts.Infrastructure.Repositories
             return await _dbSet.Include(o => o.Members)
                 .ThenInclude(m => m.User)
                 .FirstOrDefaultAsync(o => o.Id == id);
+        }
+
+        public async Task<IEnumerable<Organization>> GetAllWithMembersAsync()
+        {
+            return await _dbSet
+                .Include(o => o.Members)
+                    .ThenInclude(m => m.User)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Organization>> GetAvailableToEnter(string userId)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -145,6 +145,29 @@ namespace Volts.Application.Services
             };
         }
 
+        private static OrganizationCompleteViewDto MapToCompleteViewDto(Organization organization, string userId)
+        {
+            var isJoined = organization.Members.Any(m => m.UserId == userId);
+            var currentUserRole = organization.Members
+                .FirstOrDefault(m => m.UserId == userId)?.Role.ToString() ?? string.Empty;
+
+            return new OrganizationCompleteViewDto
+            {
+                Id = organization.Id,
+                Name = organization.Name,
+                Description = organization.Description,
+                Email = organization.Email,
+                Phone = organization.Phone,
+                Address = organization.Address,
+                CreatedById = organization.CreatedById,
+                CreatedAt = organization.CreatedAt,
+                UpdatedAt = organization.UpdatedAt,
+                IsCurrentUserJoined = isJoined,
+                MemberCount = organization.Members.Count,
+                CurrentUserOrganizationRole = currentUserRole
+            };
+        }
+
         private async Task<bool> UserHasPermissionAsync(string userId, string organizationId, IEnumerable<OrganizationRoleEnum> allowedRoles)
         {
             var member = (await _unitOfWork.OrganizationMembers
@@ -217,7 +240,7 @@ namespace Volts.Application.Services
 
             var membership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, organizationId);
             if (membership == null)
-                return; // idempotent
+                return; // idempotente
 
             await _unitOfWork.BeginTransactionAsync();
 
@@ -229,6 +252,11 @@ namespace Volts.Application.Services
                 // Pega os membros restantes
                 var remainingMembers = await _unitOfWork.OrganizationMembers.FindAsync(m => m.OrganizationId == organizationId);
 
+                // Remove manualmente o membro atual, caso ainda esteja na lista por não ter sido persistido
+                remainingMembers = remainingMembers
+                    .Where(m => m.UserId != userId)
+                    .ToList();
+
                 // Se não sobrou ninguém, deleta a organização
                 if (!remainingMembers.Any())
                 {
@@ -236,8 +264,20 @@ namespace Volts.Application.Services
                 }
                 else
                 {
-                    // Se não há ADMINs, promove LEADERs a ADMIN
-                    await PromoteLeadersIfNoAdminsAsync(remainingMembers);
+                    // Verifica papéis dos membros restantes
+                    var hasAdmins = remainingMembers.Any(m => m.Role == OrganizationRoleEnum.ADMIN);
+                    var hasLeaders = remainingMembers.Any(m => m.Role == OrganizationRoleEnum.LEADER);
+
+                    if (!hasAdmins && !hasLeaders)
+                    {
+                        // Nenhum admin nem líder: deleta a organização
+                        await DeleteOrganizationIfEmptyAsync(organizationId);
+                    }
+                    else if (!hasAdmins && hasLeaders)
+                    {
+                        // Sem admins, mas há líderes → promove para admin
+                        await PromoteLeadersToAdminsAsync(remainingMembers);
+                    }
                 }
 
                 await _unitOfWork.CommitTransactionAsync();
@@ -258,14 +298,10 @@ namespace Volts.Application.Services
         }
 
         /// <summary>
-        /// Se não houver ADMINs, promove todos os LEADERs a ADMINs.
+        /// Promove todos os líderes para administradores.
         /// </summary>
-        private async Task PromoteLeadersIfNoAdminsAsync(IEnumerable<OrganizationMember> members)
+        private async Task PromoteLeadersToAdminsAsync(IEnumerable<OrganizationMember> members)
         {
-            bool hasAdmins = members.Any(m => m.Role == OrganizationRoleEnum.ADMIN);
-            if (hasAdmins)
-                return;
-
             var leaders = members
                 .Where(m => m.Role == OrganizationRoleEnum.LEADER)
                 .ToList();
@@ -280,5 +316,57 @@ namespace Volts.Application.Services
         }
 
 
+        public async Task<OrganizationCompleteViewDto?> GetOrganizationCompleteViewByIdAsync(string id, string userId)
+        {
+            var organization = await _unitOfWork.Organizations.GetWithMembersAsync(id);
+            if (organization == null) return null;
+            return MapToCompleteViewDto(organization, userId);
+        }
+
+        public async Task<IEnumerable<OrganizationCompleteViewDto>> GetOrganizationsCompleteViewAsync(string userId)
+        {
+            var organizations = await _unitOfWork.Organizations.GetAllWithMembersAsync();
+            return organizations.Select(o => MapToCompleteViewDto(o, userId));
+        }
+
+        public async Task<IEnumerable<OrganizationMemberDto>> GetOrganizationMembersAsync(string organizationId)
+        {
+            var members = await _unitOfWork.OrganizationMembers.GetByOrganizationIdAsync(organizationId);
+            return members.Select(m => new OrganizationMemberDto
+            {
+                Id = m.Id,
+                UserId = m.UserId,
+                OrganizationId = m.OrganizationId,
+                Role = m.Role.ToString(),
+                JoinedAt = m.JoinedAt,
+                UserName = m.User?.Name ?? string.Empty,
+                UserEmail = m.User?.Email ?? string.Empty
+            });
+        }
+
+        public async Task ChangeOrganizationMemberRoleAsync(string organizationId, string memberId, string role, string currentUserId)
+        {
+            // Validar permissão: ADMIN ou LEADER
+            var currentMember = await _unitOfWork.OrganizationMembers.GetMembershipAsync(currentUserId, organizationId);
+            if (currentMember == null || (currentMember.Role != OrganizationRoleEnum.ADMIN && currentMember.Role != OrganizationRoleEnum.LEADER))
+            {
+                throw new UserHasNotPermissionException("User does not have permission to perform this action");
+            }
+
+            // Validar member alvo
+            var member = await _unitOfWork.OrganizationMembers.GetByIdAsync(memberId)
+                ?? throw new NotFoundException("Organization member not found");
+
+            if (member.OrganizationId != organizationId)
+                throw new ArgumentException("Member does not belong to this organization");
+
+            // Parse de role
+            if (!Enum.TryParse<OrganizationRoleEnum>(role, true, out var newRole))
+                throw new ArgumentException("Invalid role provided");
+
+            member.Role = newRole;
+            await _unitOfWork.OrganizationMembers.UpdateAsync(member);
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }

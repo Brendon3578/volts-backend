@@ -46,6 +46,12 @@ namespace Volts.Application.Services
         public async Task<GroupDto> CreateAsync(CreateGroupDto dto, string createdById)
         {
             var userExists = await _unitOfWork.Users.ExistsAsync(createdById);
+
+            var userMembership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(createdById, dto.OrganizationId);
+
+            if (userMembership == null || userMembership.Role == OrganizationRoleEnum.MEMBER)
+                throw new UnauthorizedAccessException("Você não tem permissão");
+
             var organizationExists = await _unitOfWork.Organizations.ExistsAsync(dto.OrganizationId);
 
             if (userExists == false)
