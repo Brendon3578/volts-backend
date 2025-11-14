@@ -50,5 +50,14 @@ namespace Volts.Infrastructure.Repositories
             await _dbSet.AddAsync(membership);
             return membership;
         }
+
+        public async Task DeleteMembershipAsync(string memberId)
+        {
+            var entity = await _dbSet.FirstOrDefaultAsync(x => x.Id == memberId);
+            if (entity != null)
+            {
+                _dbSet.Remove(entity);
+            }
+        }
     }
 }

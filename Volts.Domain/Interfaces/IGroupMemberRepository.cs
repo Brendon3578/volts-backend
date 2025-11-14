@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,5 +13,6 @@ namespace Volts.Domain.Interfaces
         Task<IEnumerable<GroupMember>> GetByUserAndOrganizationAsync(string userId, string id);
         Task<IEnumerable<GroupMember>> GetByUserIdAsync(string userId);
         Task<GroupMember?> GetMembershipAsync(string userId, string groupId);
+        Task DeleteByUserAndOrganizationAsync(string userId, string organizationId);
     }
 }

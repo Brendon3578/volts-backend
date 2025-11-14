@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,5 +45,17 @@ namespace Volts.Infrastructure.Repositories
             return await _dbSet
                 .FirstOrDefaultAsync(gm => gm.UserId == userId && gm.GroupId == groupId);
         }
+
+        public async Task DeleteByUserAndOrganizationAsync(string userId, string organizationId)
+        {
+            var toRemove = await _context.GroupMembers
+                .Include(gm => gm.Group)
+                .Where(gm => gm.UserId == userId && gm.Group.OrganizationId == organizationId)
+                .ToListAsync();
+
+            if (toRemove.Count == 0) return;
+
+            _context.GroupMembers.RemoveRange(toRemove);
+        }
     }
-   }
+}

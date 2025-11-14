@@ -21,5 +21,6 @@ namespace Volts.Application.Interfaces
         Task<IEnumerable<OrganizationMemberDto>> GetOrganizationMembersAsync(string organizationId);
         Task ChangeOrganizationMemberRoleAsync(string organizationId, string memberId, string role, string currentUserId);
         Task<OrganizationMemberDto> InviteMemberAsync(string organizationId, InviteUserOrganizationDto dto, string currentUserId);
+        Task RemoveMemberAsync(string organizationId, string memberId, string currentUserId);
     }
 }

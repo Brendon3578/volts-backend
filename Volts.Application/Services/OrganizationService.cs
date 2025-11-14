@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volts.Application.DTOs.Organization;
-using Volts.Application.Interfaces;
 using Volts.Application.Exceptions;
+using Volts.Application.Interfaces;
 using Volts.Domain.Entities;
 using Volts.Domain.Enums;
 using Volts.Domain.Interfaces;
@@ -289,6 +290,29 @@ namespace Volts.Application.Services
             }
         }
 
+        public async Task RemoveMemberAsync(string organizationId, string memberId, string currentUserId)
+        {
+            // Permissão: ADMIN ou LEADER
+            await ValidateUserPermissionAsync(currentUserId, organizationId, new[] { OrganizationRoleEnum.ADMIN, OrganizationRoleEnum.LEADER });
+
+            // Verificar organização
+            var organization = await _unitOfWork.Organizations.GetByIdAsync(organizationId)
+                ?? throw new NotFoundException("Organização não encontrada");
+
+            // Verificar membro
+            var member = await _unitOfWork.OrganizationMembers.GetByIdAsync(memberId);
+            if (member == null || member.OrganizationId != organizationId)
+                throw new NotFoundException("Membro não encontrado na organização");
+
+            // Remover relacionamento de membro com a organização
+            await _unitOfWork.OrganizationMembers.DeleteMembershipAsync(memberId);
+
+            // Remover todos os GroupMember do mesmo usuário nos grupos da organização
+            await _unitOfWork.GroupMembers.DeleteByUserAndOrganizationAsync(member.UserId, organizationId);
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task<OrganizationMemberDto> InviteMemberAsync(string organizationId, InviteUserOrganizationDto dto, string currentUserId)
         {
             if (string.IsNullOrWhiteSpace(dto.InvitedEmail))
@@ -318,8 +342,9 @@ namespace Volts.Application.Services
                 };
             }
 
-            // Papel padrão do convidado: MEMBER
-            var roleToAssign = OrganizationRoleEnum.MEMBER;
+            if (!Enum.TryParse<OrganizationRoleEnum>(dto.InviterRole, true, out var roleToAssign))
+                throw new ArgumentException("Invalid role provided");
+
 
             // Persistir relacionamento do novo membro
             var membership = await _unitOfWork.OrganizationMembers.InviteMemberAsync(
