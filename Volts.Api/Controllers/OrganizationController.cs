@@ -223,6 +223,19 @@ namespace Volts.Api.Controllers
             return Ok();
         }
 
+        // TODO: validar de quando deletar único admin, deletar a organização
+        [HttpDelete("{organizationId}/members/{memberId}")]
+        [NotLoggedAuthorize]
+        public async Task<IActionResult> RemoveMember(string organizationId, string memberId)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            await _organizationService.RemoveMemberAsync(organizationId, memberId, userId);
+            return NoContent();
+        }
+
         // TODO: fazer controller de organization member, obs: ao deletar um membro deve deletar o groupmember dele também
     }
 }
