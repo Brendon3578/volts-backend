@@ -193,6 +193,7 @@ namespace Volts.Application.Services
                 OrganizationName = group.Organization?.Name ?? string.Empty,
                 CreatedById = group.CreatedById,
                 CreatedAt = group.CreatedAt,
+                TotalShiftsCount = group.Shifts?.Count,
                 UpcomingShiftsCount = upcomingShifts,
                 Color = group.Color,
                 Icon = group.Icon,

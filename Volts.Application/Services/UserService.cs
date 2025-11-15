@@ -98,7 +98,7 @@ namespace Volts.Application.Services
                 ?? throw new UserHasNotPermissionException("Usuário não encontrado");
 
             // Buscar todas as organizações do usuário
-            var organizationMembers = await _unitOfWork.OrganizationMembers.GetByUserIdAsync(userId);
+            var organizationMembers = await _unitOfWork.OrganizationMembers.GetWithMemberByUserIdAsync(userId);
             
             var result = new List<UserOrganizationWithGroupsDto>();
             
@@ -106,9 +106,6 @@ namespace Volts.Application.Services
             {
 
                 var organization = orgMember.Organization;
-
-                if (organization == null) // gambiarra
-                    await _unitOfWork.Organizations.GetWithGroupsAsync(orgMember.OrganizationId);
                     
                 if (organization == null) continue;
                 
@@ -128,6 +125,8 @@ namespace Volts.Application.Services
                     GroupId = g.Id,
                     GroupName = g.Name,
                     GroupDescription = g.Description ?? string.Empty,
+                    GroupColor = g.Color,
+                    GroupIcon = g.Icon,
                 }).ToList() ?? [];
                 
                 result.Add(orgDto);

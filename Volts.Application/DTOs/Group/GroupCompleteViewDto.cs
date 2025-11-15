@@ -11,10 +11,9 @@ namespace Volts.Application.DTOs.Group
         public string OrganizationName { get; set; } = string.Empty;
         public string CreatedById { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public int? MemberCount { get; set; }
+        public int? TotalShiftsCount { get; set; }
         public int? UpcomingShiftsCount { get; set; }
         public string? Color { get; set; }
         public string? Icon { get; set; }
-        public bool IsCurrentUserJoined { get; set; }
     }
 }

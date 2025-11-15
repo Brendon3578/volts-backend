@@ -22,10 +22,11 @@ namespace Volts.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<OrganizationMember>> GetByUserIdAsync(string userId)
+        public async Task<IEnumerable<OrganizationMember>> GetWithMemberByUserIdAsync(string userId)
         {
             return await _dbSet
                 .Include(om => om.Organization)
+                .ThenInclude(o => o.Groups)
                 .Where(om => om.UserId == userId)
                 .ToListAsync();
         }
