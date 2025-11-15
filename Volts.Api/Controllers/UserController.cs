@@ -63,10 +63,10 @@ namespace Volts.Api.Controllers
         /// Retorna todas as organizações e grupos do usuário autenticado
         /// </summary>
         [HttpGet("organizations")]
-        [ProducesResponseType(typeof(List<UserOrganizationGroupsDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<UserOrganizationWithGroupsDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<List<UserOrganizationGroupsDto>>> GetUserOrganizationsAndGroups()
+        public async Task<ActionResult<List<UserOrganizationWithGroupsDto>>> GetUserOrganizationsAndGroups()
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))

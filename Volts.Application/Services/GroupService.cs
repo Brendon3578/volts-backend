@@ -79,15 +79,6 @@ namespace Volts.Application.Services
 
                 await _unitOfWork.SaveChangesAsync();
 
-                var groupMembership = new GroupMember()
-                {
-                    Role = GroupRoleEnum.GROUP_LEADER,
-                    UserId = createdById,
-                    GroupId = group.Id,
-                };
-
-                await _unitOfWork.GroupMembers.AddAsync(groupMembership);
-
                 // Aqui n�o chamamos SaveChangesAsync de novo ainda.
                 // O CommitTransactionAsync vai cuidar disso internamente.
                 await _unitOfWork.CommitTransactionAsync();
@@ -132,108 +123,16 @@ namespace Volts.Application.Services
             var group = await _unitOfWork.Groups.GetByIdAsync(id)
                 ?? throw new NotFoundException("Group not found");
 
-            var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, group.Id)
-                ?? throw new UserHasNotPermissionException("User is not a member of the group");
+            var membership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, group.OrganizationId)
+                ?? throw new UserHasNotPermissionException("User is not a member of the organization");
 
             // só poder deletar se for não for volunteer, TODO: melhorar isso
 
-            if (membership.Role == GroupRoleEnum.VOLUNTEER)
-                throw new UserHasNotPermissionException("Only coordinator or group leader can delete a group");
+            if (membership.Role == OrganizationRoleEnum.MEMBER)
+                throw new UserHasNotPermissionException("Only admin or leader can delete a group");
 
 
             await _unitOfWork.Groups.DeleteAsync(id);
-
-            await _unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<GroupMemberDto>> GetMembersAsync(string groupId)
-        {
-            var group = await _unitOfWork.Groups.GetByIdAsync(groupId)
-                ?? throw new NotFoundException("Group not found");
-
-            var members = await _unitOfWork.GroupMembers.GetWithUserByGroupIdAsync(groupId);
-
-            return members.Select(m => new GroupMemberDto
-            {
-                Id = m.Id,
-                UserId = m.UserId,
-                GroupId = m.GroupId,
-                Role = m.Role.ToString(),
-                JoinedAt = m.JoinedAt,
-                UserName = m.User.Name,
-                UserEmail = m.User.Email,
-            });
-        }
-
-
-        public async Task JoinAsync(string groupId, string userId)
-        {
-            // check if already member
-            var existing = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, groupId);
-
-            if (existing != null) return;
-
-            var existingGroup = await _unitOfWork.Groups.GetByIdAsync(groupId)
-                ?? throw new NotFoundException("Group not exists");
-
-            var organizationMembership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, existingGroup.OrganizationId)
-                ?? throw new UserHasNotPermissionException("User is not member of this organization");
-
-            var membership = new GroupMember
-            {
-                UserId = userId,
-                GroupId = groupId,
-                Role = GroupRoleEnum.VOLUNTEER,
-                JoinedAt = DateTime.UtcNow
-            };
-
-            await _unitOfWork.GroupMembers.AddAsync(membership);
-            await _unitOfWork.SaveChangesAsync();
-        }
-
-        // TODO: fazer rota se for usar esse service
-        public async Task InviteUserAsync(string groupId, string userId, InviteUserGroupDto inviteDto)
-        {
-            // check if already member
-            var existing = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, groupId);
-
-            if (existing != null) return;
-
-            var invitedUser = await _unitOfWork.Users.GetByEmailAsync(inviteDto.InvitedEmail);
-
-            if (invitedUser == null)
-                throw new NotFoundException("User not found with this email");
-
-            var isInviterMember = await _unitOfWork.GroupMembers.GetMembershipAsync(invitedUser.Id, groupId);
-
-            if (isInviterMember != null)
-            {
-                throw new UserHasNotPermissionException("Inviter is not member of this group!");
-            }
-
-            // aqui nao precisa validar inviterId pois na teoria ele j� est� autenticado
-
-            var membership = new GroupMember
-            {
-                UserId = inviteDto.InvitedEmail,
-                GroupId = groupId,
-                Role = inviteDto.InviterRole,
-                JoinedAt = DateTime.UtcNow,
-                AddedById = userId,
-            };
-
-            await _unitOfWork.GroupMembers.AddAsync(membership);
-            await _unitOfWork.SaveChangesAsync();
-
-        }
-
-        public async Task LeaveAsync(string groupId, string userId)
-        {
-            var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, groupId);
-
-            if (membership == null) return;
-
-            await _unitOfWork.GroupMembers.DeleteAsync(membership.Id);
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -259,7 +158,7 @@ namespace Volts.Application.Services
             if (group == null) return null;
 
             // Calculate upcoming shifts (shifts that haven't happened yet)
-            return MapToCompleteViewDto(group, userId);
+            return MapToCompleteViewDto(group);
         }
 
         private static GroupDto MapToDto(Group g) => new GroupDto
@@ -275,13 +174,9 @@ namespace Volts.Application.Services
             UpdatedAt = g.UpdatedAt
         };
 
-        private static GroupCompleteViewDto MapToCompleteViewDto(Group group, string userId)
+        private static GroupCompleteViewDto MapToCompleteViewDto(Group group)
         {
-
             var upcomingShifts = group.Shifts?.Count(s => s.StartDate >= DateTime.UtcNow) ?? 0;
-
-            var currentUserMembership = group.Members.FirstOrDefault(m => m.UserId == userId);
-            var isCurrentUserJoinedGroup = currentUserMembership != null;
 
             return new GroupCompleteViewDto
             {
@@ -292,36 +187,10 @@ namespace Volts.Application.Services
                 OrganizationName = group.Organization?.Name ?? string.Empty,
                 CreatedById = group.CreatedById,
                 CreatedAt = group.CreatedAt,
-                MemberCount = group.Members?.Count ?? 0,
                 UpcomingShiftsCount = upcomingShifts,
                 Color = group.Color,
                 Icon = group.Icon,
-                IsCurrentUserJoined = isCurrentUserJoinedGroup,
-                CurrentUserRole = currentUserMembership?.Role.ToString() ?? string.Empty
             };
-        }
-
-        private async Task<bool> UserGroupHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
-        {
-            var groupMembership = (await _unitOfWork.GroupMembers
-                .FindOneAsync(gm => gm.UserId == userId && gm.GroupId == groupId));
-
-            if (groupMembership == null)
-                return false;
-
-            return allowedRoles.Contains(groupMembership.Role);
-        }
-
-        private async Task ValidateUserPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
-        {
-            bool hasPermission = await UserGroupHasPermissionAsync(userId, groupId, allowedRoles);
-            if (!hasPermission)
-                throw new UserHasNotPermissionException("User does not have the required permissions for this operation");
-        }
-
-        private async Task<bool> IsGroupLeaderOrCoordinator(string userId, string groupId)
-        {
-            return await UserGroupHasPermissionAsync(userId, groupId, new[] { GroupRoleEnum.GROUP_LEADER, GroupRoleEnum.COORDINATOR });
         }
 
         public async Task<IEnumerable<GroupCompleteViewDto>> GetGroupsCompleteViewByOrganizationidAsync(string organizationId, string userId)
@@ -329,8 +198,7 @@ namespace Volts.Application.Services
             var groups = await _unitOfWork.Groups
                 .GetGroupsCompleteViewByOrganizationidAsync(organizationId);
 
-
-            return groups.Select(g => MapToCompleteViewDto(g, userId));
+            return groups.Select(MapToCompleteViewDto);
         }
     }
 }

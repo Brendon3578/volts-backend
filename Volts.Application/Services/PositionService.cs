@@ -39,20 +39,20 @@ namespace Volts.Application.Services
         }
 
         public async Task<PositionDto> GetByIdAsync(string id)
-    {
-        var position = await _unitOfWork.Positions.GetByIdAsync(id)
-            ?? throw new NotFoundException("Position not found");
-
-        return new PositionDto
         {
-            Id = position.Id,
-            Name = position.Name,
-            Description = position.Description,
-            GroupId = position.GroupId,
-            CreatedAt = position.CreatedAt,
-            UpdatedAt = position.UpdatedAt
-        };
-    }
+            var position = await _unitOfWork.Positions.GetByIdAsync(id)
+                ?? throw new NotFoundException("Position not found");
+
+            return new PositionDto
+            {
+                Id = position.Id,
+                Name = position.Name,
+                Description = position.Description,
+                GroupId = position.GroupId,
+                CreatedAt = position.CreatedAt,
+                UpdatedAt = position.UpdatedAt
+            };
+        }
 
         public async Task<PositionDto> CreateAsync(CreatePositionDto dto, string userId)
         {
@@ -91,89 +91,75 @@ namespace Volts.Application.Services
 
         public async Task<PositionDto> UpdateAsync(string id, UpdatePositionDto dto, string userId)
         {
+            // Buscar a posição
             var position = await _unitOfWork.Positions.GetByIdAsync(id)
                 ?? throw new NotFoundException("Position not found");
 
-            // check permissions on the position's group
-            var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, position.GroupId);
-            if (membership == null)
-                throw new UserHasNotPermissionException("User is not a member of the group");
+            // Buscar grupo ao qual a posição pertence
+            var group = await _unitOfWork.Groups.GetByIdAsync(position.GroupId)
+                ?? throw new NotFoundException("Group not found");
 
-            if (membership.Role != GroupRoleEnum.GROUP_LEADER && membership.Role != GroupRoleEnum.COORDINATOR)
-                throw new UserHasNotPermissionException("Insufficient role to update position");
+            // Buscar a membership do usuário dentro da ORGANIZAÇÃO do grupo
+            var membership = await _unitOfWork.OrganizationMembers
+                .GetMembershipAsync(userId, group.OrganizationId)
+                ?? throw new UserHasNotPermissionException("User is not a member of the organization");
 
-            if (dto.Name != null) position.Name = dto.Name;
-            if (dto.Description != null) position.Description = dto.Description;
+            // Validação de permissão — apenas ADMIN e LEADER
+            if (!UserHasPermissionToManagePositions(membership.Role))
+                throw new UserHasNotPermissionException("Insufficient role to update the position");
 
-            await _unitOfWork.BeginTransactionAsync();
-            try
+            // Atualizar os campos permitidos
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+                position.Name = dto.Name;
+
+            if (dto.Description != null)
+                position.Description = dto.Description;
+
+            // Atualizar a posição
+            await _unitOfWork.Positions.UpdateAsync(position);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Retornar DTO atualizado
+            return new PositionDto
             {
-                await _unitOfWork.Positions.UpdateAsync(position);
-                await _unitOfWork.CommitTransactionAsync();
-
-                return new PositionDto
-                {
-                    Id = position.Id,
-                    Name = position.Name,
-                    Description = position.Description,
-                    GroupId = position.GroupId,
-                    CreatedAt = position.CreatedAt,
-                    UpdatedAt = position.UpdatedAt
-                };
-            }
-            catch
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                throw;
-            }
+                Id = position.Id,
+                Name = position.Name,
+                Description = position.Description,
+                GroupId = position.GroupId,
+                CreatedAt = position.CreatedAt,
+                UpdatedAt = position.UpdatedAt
+            };
         }
 
-        public async Task DeleteAsync(string id, string userId)
+        public async Task DeleteAsync(string positionId, string performedByUserId)
         {
-            var position = await _unitOfWork.Positions.GetByIdAsync(id)
+            // Buscar posição
+            var position = await _unitOfWork.Positions.GetByIdAsync(positionId)
                 ?? throw new NotFoundException("Position not found");
 
-            var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, position.GroupId);
-            if (membership == null)
-                throw new UserHasNotPermissionException("User is not a member of the group");
+            // Buscar grupo correto (usando position.GroupId!)
+            var group = await _unitOfWork.Groups.GetByIdAsync(position.GroupId)
+                ?? throw new NotFoundException("Group not found");
 
-            if (membership.Role != GroupRoleEnum.GROUP_LEADER && membership.Role != GroupRoleEnum.COORDINATOR)
-                throw new UserHasNotPermissionException("Insufficient role to delete position");
+            // Verificar se o usuário pertence à ORGANIZAÇÃO
+            var membership = await _unitOfWork.OrganizationMembers
+                .GetMembershipAsync(performedByUserId, group.OrganizationId)
+                ?? throw new UserHasNotPermissionException("User is not part of this organization");
 
-            await _unitOfWork.BeginTransactionAsync();
-            try
-            {
-                await _unitOfWork.Positions.DeleteAsync(id);
-                await _unitOfWork.CommitTransactionAsync();
-            }
-            catch
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                throw;
-            }
+            // Checar permissões
+            if (!UserHasPermissionToManagePositions(membership.Role))
+                throw new UserHasNotPermissionException("Insufficient permissions to delete a position");
+
+            // Remover posição
+            await _unitOfWork.Positions.DeleteAsync(positionId);
+
+            // Commit padrão do UnitOfWork
+            await _unitOfWork.SaveChangesAsync();
         }
 
-        private async Task<bool> UserHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
+        private static bool UserHasPermissionToManagePositions(OrganizationRoleEnum role)
         {
-            var member = (await _unitOfWork.GroupMembers
-                .FindOneAsync(gm => gm.UserId == userId && gm.GroupId == groupId));
-
-            if (member == null) return false;
-
-            return allowedRoles.Contains(member.Role);
-        }
-
-        private async Task<bool> IsGroupLeaderOrCoordinator(string userId, string groupId)
-        {
-            return await UserHasPermissionAsync(userId, groupId,
-            [GroupRoleEnum.GROUP_LEADER, GroupRoleEnum.COORDINATOR]);
-        }
-        
-        private async Task ValidateUserPermissionAsync(string userId, string positionId, IEnumerable<GroupRoleEnum> allowedRoles)
-        {
-            bool hasPermission = await UserHasPermissionAsync(userId, positionId, allowedRoles);
-            if (!hasPermission)
-                throw new UserHasNotPermissionException("User does not have the required permissions for this operation");
+            return role is OrganizationRoleEnum.ADMIN or OrganizationRoleEnum.LEADER;
         }
     }
 }

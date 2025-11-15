@@ -2,6 +2,7 @@
 
 namespace Volts.Domain.Entities
 {
+    // classe que representa a aplicação de escala do usuário
     public class ShiftPositionAssignment : BaseEntity
     {
         public string UserId { get; set; } = string.Empty;

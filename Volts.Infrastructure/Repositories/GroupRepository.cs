@@ -21,14 +21,6 @@ namespace Volts.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Group?> GetWithMembersAsync(string id)
-        {
-            return await _dbSet
-                .Include(g => g.Members)
-                    .ThenInclude(m => m.User)
-                .FirstOrDefaultAsync(g => g.Id == id);
-        }
-
         public async Task<Group?> GetWithShiftsAsync(string id)
         {
             return await _dbSet
@@ -47,7 +39,6 @@ namespace Volts.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(g => g.Organization)
-                .Include(g => g.Members)
                 .Include(g => g.Shifts)
                 .FirstOrDefaultAsync(g => g.Id == id);
         }
@@ -57,7 +48,6 @@ namespace Volts.Infrastructure.Repositories
             return await _dbSet
                 .Where(g => g.OrganizationId == organizationId)
                 .Include(g => g.Organization)
-                .Include(g => g.Members)
                 .Include(g => g.Shifts)
                 .ToListAsync();
         }

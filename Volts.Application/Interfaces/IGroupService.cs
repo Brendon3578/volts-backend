@@ -13,10 +13,6 @@ namespace Volts.Application.Interfaces
         Task<GroupDto> CreateAsync(CreateGroupDto dto, string createdById);
         Task<GroupDto> UpdateAsync(string id, UpdateGroupDto dto, string userId);
         Task DeleteAsync(string id, string userId);
-        Task<IEnumerable<GroupMemberDto>> GetMembersAsync(string groupId);
-        Task JoinAsync(string groupId, string userId);
-        Task InviteUserAsync(string groupId, string userId, InviteUserGroupDto inviteDto);
-        Task LeaveAsync(string groupId, string userId);
         Task<IEnumerable<PositionDto>> GetPositionsAsync(string groupId);
         Task<GroupCompleteViewDto?> GetGroupCompleteViewByIdAsync(string id, string userId);
         Task<IEnumerable<GroupCompleteViewDto>> GetGroupsCompleteViewByOrganizationidAsync(string organizationId, string userId);

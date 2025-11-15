@@ -12,7 +12,6 @@
         // Navigation properties
         public virtual Organization Organization { get; set; } = null!;
         public virtual User CreatedBy { get; set; } = null!;
-        public virtual ICollection<GroupMember> Members { get; set; } = new List<GroupMember>();
         public virtual ICollection<Position> Positions { get; set; } = new List<Position>();
         public virtual ICollection<Shift> Shifts { get; set; } = new List<Shift>();
     }

@@ -44,8 +44,10 @@ namespace Volts.Application.Services
             var group = await _unitOfWork.Groups.GetByIdAsync(dto.GroupId)
                 ?? throw new NotFoundException("Group not found");
 
-            if (!await IsGroupLeaderOrCoordinator(userId, dto.GroupId))
+
+            if (await IsAdminOrLeader(userId, group) == false)
                 throw new UserHasNotPermissionException("User is not leader or coordinator");
+
 
             await _unitOfWork.BeginTransactionAsync();
 
@@ -105,7 +107,10 @@ namespace Volts.Application.Services
             var shift = await _unitOfWork.Shifts.GetByIdAsync(id)
                 ?? throw new NotFoundException("Shift not found");
 
-            if (await IsGroupLeaderOrCoordinator(userId, shift.GroupId) == false)
+            var group = await _unitOfWork.Groups.GetByIdAsync(shift.GroupId)
+                ?? throw new NotFoundException("Group not found");
+
+            if (await IsAdminOrLeader(userId, group) == false)
                 throw new UserHasNotPermissionException("User is not leader or coordinator");
 
             await _unitOfWork.BeginTransactionAsync();
@@ -170,24 +175,26 @@ namespace Volts.Application.Services
             var shift = await _unitOfWork.Shifts.GetByIdAsync(id)
                 ?? throw new NotFoundException("Shift not found");
 
-            if (await IsGroupLeaderOrCoordinator(userId, shift.GroupId) == false)
+            var group = await _unitOfWork.Groups.GetByIdAsync(shift.GroupId)
+                ?? throw new NotFoundException("Group not found");
+
+            if (await IsAdminOrLeader(userId, group) == false)
                 throw new UserHasNotPermissionException("User is not leader or coordinator");
 
             await _unitOfWork.Shifts.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
         }
 
-        private async Task<bool> UserHasPermissionAsync(string userId, string groupId, IEnumerable<GroupRoleEnum> allowedRoles)
+        private async Task<bool> UserHasPermissionAsync(string userId, Group group, IEnumerable<OrganizationRoleEnum> allowedRoles)
         {
-            var member = await _unitOfWork.GroupMembers
-                .FindOneAsync(m => m.UserId == userId && m.GroupId == groupId);
-
-            return member != null && allowedRoles.Contains(member.Role);
+            var memberShip = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, group.OrganizationId);
+;
+            return memberShip != null && allowedRoles.Contains(memberShip.Role);
         }
 
-        private Task<bool> IsGroupLeaderOrCoordinator(string userId, string groupId)
+        private Task<bool> IsAdminOrLeader(string userId, Group group)
         {
-            return UserHasPermissionAsync(userId, groupId, [GroupRoleEnum.GROUP_LEADER, GroupRoleEnum.COORDINATOR]);
+            return UserHasPermissionAsync(userId, group, [OrganizationRoleEnum.LEADER, OrganizationRoleEnum.ADMIN]);
         }
 
         private static ShiftDto MapToDto(Shift shift)

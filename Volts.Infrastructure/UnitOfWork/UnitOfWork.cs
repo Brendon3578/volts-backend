@@ -19,7 +19,6 @@ namespace Volts.Infrastructure.UnitOfWork
         public IOrganizationRepository Organizations { get; }
         public IOrganizationMemberRepository OrganizationMembers { get; }
         public IGroupRepository Groups { get; }
-        public IGroupMemberRepository GroupMembers { get; }
         public IPositionRepository Positions { get; }
         public IShiftRepository Shifts { get; }
         public IShiftPositionRepository ShiftPositions { get; }
@@ -32,7 +31,6 @@ namespace Volts.Infrastructure.UnitOfWork
             Organizations = new OrganizationRepository(_context);
             OrganizationMembers = new OrganizationMemberRepository(_context);
             Groups = new GroupRepository(_context);
-            GroupMembers = new GroupMemberRepository(_context);
             Positions = new PositionRepository(_context);
             Shifts = new ShiftRepository(_context);
             ShiftPositions = new ShiftPositionRepository(_context);

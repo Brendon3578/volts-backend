@@ -17,8 +17,6 @@ namespace Volts.Domain.Entities
         public virtual ICollection<Organization> OrganizationsCreated { get; set; } = new List<Organization>();
         public virtual ICollection<OrganizationMember> OrganizationMemberships { get; set; } = new List<OrganizationMember>();
         public virtual ICollection<Group> GroupsCreated { get; set; } = new List<Group>();
-        public virtual ICollection<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
-        public virtual ICollection<GroupMember> GroupMembershipsAdded { get; set; } = new List<GroupMember>();
         public virtual ICollection<ShiftPositionAssignment> ShiftPositionAssignment { get; set; } = new List<ShiftPositionAssignment>();
         public virtual ICollection<OrganizationMember> OrganizationInvites { get; set; } = new List<OrganizationMember>();
     }

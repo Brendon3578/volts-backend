@@ -28,8 +28,8 @@ namespace Volts.Application.Services
                 throw new NotFoundException("Turno não encontrado");
 
             // Verificar se o usuário é membro do grupo
-            var memberShip = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId)
-                ?? throw new UserHasNotPermissionException("Você não tem permissão para visualizar as inscrições deste turno");
+            //var memberShip = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId)
+            //    ?? throw new UserHasNotPermissionException("Você não tem permissão para visualizar as inscrições deste turno");
 
             // Buscar todas as posições do turno
             var shiftPositions = await _unitOfWork.ShiftPositions.GetByShiftIdAsync(shiftId);
@@ -51,13 +51,13 @@ namespace Volts.Application.Services
             if (shiftPosition == null)
                 throw new NotFoundException("Posição de turno não encontrada");
 
-            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId);
-            if (shift == null)
-                throw new NotFoundException("Turno não encontrado");
-
-            // Verificar se o usuário é membro do grupo
-            var memberShip = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId)
-                ?? throw new UserHasNotPermissionException("Você não tem permissão para visualizar as inscrições deste turno");
+            // var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId);
+            // if (shift == null)
+            //     throw new NotFoundException("Turno não encontrado");
+            // 
+            // // Verificar se o usuário é membro do grupo
+            // var memberShip = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId)
+            //     ?? throw new UserHasNotPermissionException("Você não tem permissão para visualizar as inscrições deste turno");
 
             var assignments = await _unitOfWork.ShiftPositionAssignment.GetByShiftPositionIdAsync(shiftPositionId);
             return assignments.Select(MapToDto);
@@ -65,55 +65,57 @@ namespace Volts.Application.Services
 
         public async Task<ShiftPositionAssignmentDto> GetByIdAsync(string id, string userId)
         {
-            var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id);
-            if (assignment == null)
-                throw new NotFoundException("Inscrição não encontrada");
+            var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id)
+                ?? throw new NotFoundException("Inscrição não encontrada");
 
-            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId);
-            if (shiftPosition == null)
-                throw new NotFoundException("Posição de turno não encontrada");
-
-            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId);
-            if (shift == null)
-                throw new NotFoundException("Turno não encontrado");
+            //var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId);
+            //if (shiftPosition == null)
+            //    throw new NotFoundException("Posição de turno não encontrada");
+            //
+            //var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId);
+            //if (shift == null)
+            //    throw new NotFoundException("Turno não encontrado");
 
             // Verificar se o usuário é membro do grupo ou é o próprio voluntário
-            var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId);
-            var isVolunteer = assignment.UserId == userId;
-            
-            if (membership == null && isVolunteer == false)
-                throw new UserHasNotPermissionException("Você não tem permissão para visualizar esta inscrição");
+            //var membership = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId);
 
             return MapToDto(assignment);
         }
 
         public async Task<ShiftPositionAssignmentDto> ApplyAsync(string shiftPositionId, string userId, CreateShiftPositionAssignmentDto dto)
         {
-            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(shiftPositionId);
-            if (shiftPosition == null)
-                throw new NotFoundException("Posição de turno não encontrada");
+            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(shiftPositionId)
+                ?? throw new NotFoundException("Posição de turno não encontrada");
 
-            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId);
-            if (shift == null)
-                throw new NotFoundException("Turno não encontrado");
+            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId)
+                ??throw new NotFoundException("Turno não encontrado");
 
-            // Verificar se o usuário é membro do grupo
-            var memberShip = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId)
-                ?? throw new UserHasNotPermissionException("Você não tem permissão para visualizar as inscrições deste turno");
 
+            var memberShip = await TryGetOrganizationMembership(shift, userId); // Verificar se o usuário é membro do grupo
+            
             // Verificar se o usuário já se inscreveu para esta posição
             var existingApplication = await _unitOfWork.ShiftPositionAssignment.GetVolunteerApplicationAsync(userId, shiftPositionId);
-            if (existingApplication != null)
+
+            var isAlreadyApplied = existingApplication != null;
+
+            if (isAlreadyApplied)
                 throw new InvalidOperationException("Você já se inscreveu para esta posição");
 
             // Verificar se o turno já está completo
             var assignments = await _unitOfWork.ShiftPositionAssignment.GetByShiftPositionIdAsync(shiftPositionId);
+
+            // 1. aqui verifica as que já estão confirmadas
             var confirmedAssignments = assignments.Count(a => a.Status == VolunteerStatusEnum.CONFIRMED);
-            
             if (confirmedAssignments >= shiftPosition.RequiredCount)
                 throw new InvalidOperationException("Esta posição já está com todas as vagas preenchidas");
 
-            // Criar a inscrição
+
+            // 2. aqui se atingir o máximo, já bloqueia
+            if (assignments.Count() >= shiftPosition.RequiredCount)
+               throw new InvalidOperationException("Esta posição já está com todas as vagas preenchidas");
+
+
+                // Criar a inscrição
             var assignment = new ShiftPositionAssignment
             {
                 UserId = userId,
@@ -131,32 +133,26 @@ namespace Volts.Application.Services
 
         public async Task<ShiftPositionAssignmentDto> ConfirmAsync(string id, string userId)
         {
-            var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id);
-            if (assignment == null)
-                throw new NotFoundException("Inscrição não encontrada");
+            var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id)
+                ?? throw new NotFoundException("Inscrição não encontrada");
 
-            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId);
-            if (shiftPosition == null)
-                throw new NotFoundException("Posição de turno não encontrada");
 
-            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId);
-            if (shift == null)
-                throw new NotFoundException("Turno não encontrado");
+            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId)
+                ?? throw new NotFoundException("Posição de turno não encontrada");
 
-            // Verificar se o usuário é coordenador ou líder do grupo
-            var member = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId);
+            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId)
+                ?? throw new NotFoundException("Turno não encontrado");
 
-            if (member == null || (member.Role != GroupRoleEnum.COORDINATOR && member.Role != GroupRoleEnum.GROUP_LEADER))
-                throw new UserHasNotPermissionException("Você não tem permissão para confirmar inscrições");
 
             // Verificar se a inscrição já está confirmada
             if (assignment.Status == VolunteerStatusEnum.CONFIRMED)
                 throw new InvalidOperationException("Esta inscrição já está confirmada");
 
+            // aqui, regra de negócio que verifica se todas as aplicações já foram confirmadas, porém ignorei pra facilitar o uso
             // Verificar se o turno já está completo
             var assignments = await _unitOfWork.ShiftPositionAssignment.GetByShiftPositionIdAsync(assignment.ShiftPositionId);
-            var confirmedAssignments = assignments.Count(a => a.Status == VolunteerStatusEnum.CONFIRMED);
-            
+             var confirmedAssignments = assignments.Count(a => a.Status == VolunteerStatusEnum.CONFIRMED);
+
             if (confirmedAssignments >= shiftPosition.RequiredCount)
                 throw new InvalidOperationException("Esta posição já está com todas as vagas preenchidas");
 
@@ -172,29 +168,31 @@ namespace Volts.Application.Services
 
         public async Task<ShiftPositionAssignmentDto> CancelAsync(string id, string userId)
         {
-            var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id);
-            if (assignment == null)
-                throw new NotFoundException("Inscrição não encontrada");
 
-            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId);
-            if (shiftPosition == null)
-                throw new NotFoundException("Posição de turno não encontrada");
-
-            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId);
-            if (shift == null)
-                throw new NotFoundException("Turno não encontrado");
-
-            // Verificar se o usuário é o próprio voluntário ou coordenador/líder do grupo
-            var isVolunteer = assignment.UserId == userId;
-            var member = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId);
-            var isCoordinatorOrLeader = member != null && (member.Role == GroupRoleEnum.COORDINATOR || member.Role == GroupRoleEnum.GROUP_LEADER);
-            
-            if (!isVolunteer && !isCoordinatorOrLeader)
-                throw new UserHasNotPermissionException("Você não tem permissão para cancelar esta inscrição");
+            var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id)
+                ?? throw new NotFoundException("Inscrição não encontrada");
 
             // Verificar se a inscrição já está cancelada
             if (assignment.Status == VolunteerStatusEnum.CANCELED)
                 throw new InvalidOperationException("Esta inscrição já está cancelada");
+
+            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId)
+                ?? throw new NotFoundException("Posição de turno não encontrada");
+
+            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId)
+                ?? throw new NotFoundException("Turno não encontrado");
+
+            // Verificar se o usuário é o próprio voluntário ou coordenador/líder do grupo
+            var isUserCreator = assignment.UserId == userId;
+
+            var member = await TryGetOrganizationMembership(shift, userId);
+
+            var isLeaderOrAdmin = member.Role == OrganizationRoleEnum.ADMIN || member.Role == OrganizationRoleEnum.LEADER;
+            
+            if (!isUserCreator && !isLeaderOrAdmin)
+                throw new UserHasNotPermissionException("Você não tem permissão para cancelar esta inscrição");
+
+
 
             // Cancelar a inscrição
             assignment.Status = VolunteerStatusEnum.CANCELED;
@@ -208,23 +206,25 @@ namespace Volts.Application.Services
 
         public async Task DeleteAsync(string id, string userId)
         {
-            var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id);
-            if (assignment == null)
-                throw new NotFoundException("Inscrição não encontrada");
+            var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id)
+                ??throw new NotFoundException("Inscrição não encontrada");
 
-            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId);
-            if (shiftPosition == null)
-                throw new NotFoundException("Posição de turno não encontrada");
+            var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId)
+                ?? throw new NotFoundException("Posição de turno não encontrada");
 
-            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId);
-            if (shift == null)
-                throw new NotFoundException("Turno não encontrado");
+            var shift = await _unitOfWork.Shifts.GetByIdAsync(shiftPosition.ShiftId)
+                ?? throw new NotFoundException("Turno não encontrado");
 
-            // Verificar se o usuário é coordenador ou líder do grupo
-            var member = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId);
+            // Verificar se o usuário é coordenador ou líder do grupo ou criador da própria aplicação
+            var isUserCreator = assignment.UserId == userId;
 
-            if (member == null || (member.Role != GroupRoleEnum.COORDINATOR && member.Role != GroupRoleEnum.GROUP_LEADER))
-                throw new UserHasNotPermissionException("Você não tem permissão para remover inscrições");
+            var member = await TryGetOrganizationMembership(shift, userId);
+
+            var isLeaderOrAdmin = member.Role == OrganizationRoleEnum.ADMIN || member.Role == OrganizationRoleEnum.LEADER;
+
+            if (!isUserCreator && !isLeaderOrAdmin)
+                throw new UserHasNotPermissionException("Você não tem permissão para cancelar esta inscrição");
+
 
             await _unitOfWork.ShiftPositionAssignment.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
@@ -247,6 +247,18 @@ namespace Volts.Application.Services
                 CreatedAt = assignment.CreatedAt,
                 UpdatedAt = assignment.UpdatedAt
             };
+        }
+
+
+        private async Task<OrganizationMember> TryGetOrganizationMembership(Shift shift, string userId)
+        {
+            var group = await _unitOfWork.Groups.GetByIdAsync(shift.GroupId)
+                ?? throw new NotFoundException("Group not found!");
+
+            var memberShip = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, group.OrganizationId)
+                ?? throw new NotFoundException("User is not member of this organization");
+
+            return memberShip;
         }
     }
 }

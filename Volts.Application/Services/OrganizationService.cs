@@ -307,9 +307,6 @@ namespace Volts.Application.Services
             // Remover relacionamento de membro com a organização
             await _unitOfWork.OrganizationMembers.DeleteMembershipAsync(memberId);
 
-            // Remover todos os GroupMember do mesmo usuário nos grupos da organização
-            await _unitOfWork.GroupMembers.DeleteByUserAndOrganizationAsync(member.UserId, organizationId);
-
             await _unitOfWork.SaveChangesAsync();
         }
 

@@ -10,7 +10,6 @@ namespace Volts.Domain.Interfaces
     public interface IGroupRepository : IRepository<Group>
     {
         Task<IEnumerable<Group>> GetByOrganizationIdAsync(string organizationId);
-        Task<Group?> GetWithMembersAsync(string id);
         Task<Group?> GetWithShiftsAsync(string id);
         Task<Group?> GetWithPositionsAsync(string id);
         Task<Group?> GetGroupCompleteViewByIdAsync(string id);

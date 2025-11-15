@@ -84,46 +84,6 @@ namespace Volts.Api.Controllers
             return NoContent();
         }
 
-        [HttpGet("{id}/members")]
-        public async Task<ActionResult<IEnumerable<GroupMemberDto>>> GetMembers(string id)
-        {
-            var members = await _groupService.GetMembersAsync(id);
-            return Ok(members);
-        }
-
-        [HttpPost("{id}/join")]
-        public async Task<IActionResult> Join(string id)
-        {
-            var userId = User.GetUserId();
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
-
-            await _groupService.JoinAsync(id, userId);
-            return Ok();
-        }
-
-        [HttpPost("{id}/invite")]
-        public async Task<IActionResult> InviteUser(string id, [FromBody] InviteUserGroupDto inviteDto)
-        {
-            var userId = User.GetUserId();
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
-
-            await _groupService.InviteUserAsync(id, userId, inviteDto);
-            return Ok();
-        }
-
-        [HttpPost("{id}/leave")]
-        public async Task<IActionResult> Leave(string id)
-        {
-            var userId = User.GetUserId();
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
-
-            await _groupService.LeaveAsync(id, userId);
-            return Ok();
-        }
-
         [HttpGet("{id}/positions")]
         public async Task<ActionResult<IEnumerable<PositionDto>>> GetPositions(string id)
         {

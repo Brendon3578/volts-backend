@@ -19,7 +19,6 @@ namespace Volts.Infrastructure.Data
         public DbSet<Organization> Organizations { get; set; }
         public DbSet<OrganizationMember> OrganizationMembers { get; set; }
         public DbSet<Group> Groups { get; set; }
-        public DbSet<GroupMember> GroupMembers { get; set; }
         public DbSet<Position> Positions { get; set; }
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<ShiftPosition> ShiftPositions { get; set; }
@@ -105,32 +104,6 @@ namespace Volts.Infrastructure.Data
                     .WithMany(u => u.GroupsCreated)
                     .HasForeignKey(e => e.CreatedById)
                     .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // GroupMember Configuration
-            modelBuilder.Entity<GroupMember>(entity =>
-            {
-                entity.ToTable("group_members");
-                entity.HasKey(e => e.Id);
-                entity.HasIndex(e => new { e.UserId, e.GroupId }).IsUnique();
-                entity.HasIndex(e => e.UserId);
-                entity.HasIndex(e => e.GroupId);
-                entity.HasIndex(e => new { e.GroupId, e.Role });
-
-                entity.HasOne(e => e.User)
-                    .WithMany(u => u.GroupMemberships)
-                    .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(e => e.Group)
-                    .WithMany(g => g.Members)
-                    .HasForeignKey(e => e.GroupId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(e => e.AddedBy)
-                    .WithMany(u => u.GroupMembershipsAdded)
-                    .HasForeignKey(e => e.AddedById)
-                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Position Configuration

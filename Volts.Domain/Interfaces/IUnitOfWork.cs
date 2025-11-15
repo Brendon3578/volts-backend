@@ -12,7 +12,6 @@ namespace Volts.Domain.Interfaces
         IOrganizationRepository Organizations { get; }
         IOrganizationMemberRepository OrganizationMembers { get; }
         IGroupRepository Groups { get; }
-        IGroupMemberRepository GroupMembers { get; }
         IPositionRepository Positions { get; }
         IShiftRepository Shifts { get; }
         IShiftPositionRepository ShiftPositions { get; }

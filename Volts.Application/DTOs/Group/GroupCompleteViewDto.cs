@@ -16,6 +16,5 @@ namespace Volts.Application.DTOs.Group
         public string? Color { get; set; }
         public string? Icon { get; set; }
         public bool IsCurrentUserJoined { get; set; }
-        public string CurrentUserRole { get; set; }
     }
 }
