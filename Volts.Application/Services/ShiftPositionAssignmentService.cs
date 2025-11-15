@@ -27,9 +27,8 @@ namespace Volts.Application.Services
             if (shift == null)
                 throw new NotFoundException("Turno não encontrado");
 
-            // Verificar se o usuário é membro do grupo
-            //var memberShip = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId)
-            //    ?? throw new UserHasNotPermissionException("Você não tem permissão para visualizar as inscrições deste turno");
+            // aqui nao precisa por enquanto de validação por role
+            // await TryGetOrganizationMembership(shift, userId);
 
             // Buscar todas as posições do turno
             var shiftPositions = await _unitOfWork.ShiftPositions.GetByShiftIdAsync(shiftId);
@@ -55,9 +54,8 @@ namespace Volts.Application.Services
             // if (shift == null)
             //     throw new NotFoundException("Turno não encontrado");
             // 
-            // // Verificar se o usuário é membro do grupo
-            // var memberShip = await _unitOfWork.GroupMembers.GetMembershipAsync(userId, shift.GroupId)
-            //     ?? throw new UserHasNotPermissionException("Você não tem permissão para visualizar as inscrições deste turno");
+            // aqui nao precisa por enquanto de validação por role
+            // await TryGetOrganizationMembership(shift, userId);
 
             var assignments = await _unitOfWork.ShiftPositionAssignment.GetByShiftPositionIdAsync(shiftPositionId);
             return assignments.Select(MapToDto);

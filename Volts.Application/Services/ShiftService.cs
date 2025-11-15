@@ -179,7 +179,7 @@ namespace Volts.Application.Services
                 ?? throw new NotFoundException("Group not found");
 
             if (await IsAdminOrLeader(userId, group) == false)
-                throw new UserHasNotPermissionException("User is not leader or coordinator");
+                throw new UserHasNotPermissionException("User is not leader or admin");
 
             await _unitOfWork.Shifts.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();

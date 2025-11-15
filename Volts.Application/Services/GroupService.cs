@@ -99,6 +99,12 @@ namespace Volts.Application.Services
             var group = await _unitOfWork.Groups.GetByIdAsync(id)
                 ?? throw new NotFoundException("Group not found");
 
+            var membership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, group.OrganizationId)
+                ?? throw new UserHasNotPermissionException("User is not a member of the organization");
+
+            if (membership.Role == OrganizationRoleEnum.MEMBER)
+                throw new UserHasNotPermissionException("Only admin or leader can update a group");
+
             if (dto.Name != null) group.Name = dto.Name;
 
             if (dto.Description != null) group.Description = dto.Description;

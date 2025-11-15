@@ -293,16 +293,21 @@ namespace Volts.Application.Services
         public async Task RemoveMemberAsync(string organizationId, string memberId, string currentUserId)
         {
             // Permissão: ADMIN ou LEADER
-            await ValidateUserPermissionAsync(currentUserId, organizationId, new[] { OrganizationRoleEnum.ADMIN, OrganizationRoleEnum.LEADER });
+            var currentMember = await _unitOfWork.OrganizationMembers.GetMembershipAsync(currentUserId, organizationId)
+                ?? throw new UserHasNotPermissionException("Current user is not a member of the organization");
 
-            // Verificar organização
-            var organization = await _unitOfWork.Organizations.GetByIdAsync(organizationId)
-                ?? throw new NotFoundException("Organização não encontrada");
+            if (currentMember.Role == OrganizationRoleEnum.MEMBER)
+                throw new UserHasNotPermissionException("Você não tem permissão.");
 
             // Verificar membro
             var member = await _unitOfWork.OrganizationMembers.GetByIdAsync(memberId);
+            
             if (member == null || member.OrganizationId != organizationId)
                 throw new NotFoundException("Membro não encontrado na organização");
+
+            // Admins não podem remover a si mesmos
+            if (currentMember.Role == OrganizationRoleEnum.ADMIN && member.UserId == currentUserId)
+                throw new UserHasNotPermissionException("Admin não pode remover a si mesmo");
 
             // Remover relacionamento de membro com a organização
             await _unitOfWork.OrganizationMembers.DeleteMembershipAsync(memberId);
@@ -439,6 +444,15 @@ namespace Volts.Application.Services
             // Parse de role
             if (!Enum.TryParse<OrganizationRoleEnum>(role, true, out var newRole))
                 throw new ArgumentException("Invalid role provided");
+
+            if (currentMember.Role == OrganizationRoleEnum.LEADER)
+            {
+                if (member.Role == OrganizationRoleEnum.ADMIN)
+                    throw new UserHasNotPermissionException("Leader não pode alterar ADMIN");
+
+                if (newRole == OrganizationRoleEnum.ADMIN)
+                    throw new UserHasNotPermissionException("Leader não pode promover para ADMIN");
+            }
 
             member.Role = newRole;
             await _unitOfWork.OrganizationMembers.UpdateAsync(member);

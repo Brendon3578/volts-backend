@@ -35,13 +35,6 @@ erDiagram
         string OrganizationId FK
     }
     
-    GroupMember {
-        string Id PK
-        string UserId FK
-        string GroupId FK
-        enum Role
-    }
-    
     Position {
         string Id PK
         string Name
@@ -79,12 +72,11 @@ erDiagram
         datetime RejectedAt
     }
     
+    %% Relationships
     User ||--o{ OrganizationMember : "pertence"
     Organization ||--o{ OrganizationMember : "tem"
     Organization ||--o{ Group : "tem"
     Group ||--o{ Position : "tem"
-    User ||--o{ GroupMember : "pertence"
-    Group ||--o{ GroupMember : "tem"
     Group ||--o{ Shift : "organiza"
     Shift ||--o{ ShiftPosition : "tem"
     Position ||--o{ ShiftPosition : "associada"
