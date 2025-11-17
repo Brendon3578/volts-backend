@@ -150,6 +150,14 @@ namespace Volts.Application.Services
             if (!UserHasPermissionToManagePositions(membership.Role))
                 throw new UserHasNotPermissionException("Insufficient permissions to delete a position");
 
+
+            var hasShiftPositionAttached = await _unitOfWork.ShiftPositions.ExistsForPositionAsync(positionId);
+
+            if (hasShiftPositionAttached)
+                throw new ConflictException("Has shifts attached to this position");
+
+
+
             // Remover posição
             await _unitOfWork.Positions.DeleteAsync(positionId);
 

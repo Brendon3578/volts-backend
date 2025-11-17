@@ -171,7 +171,7 @@ namespace Volts.Application.Services
                 ?? throw new NotFoundException("Inscrição não encontrada");
 
             // Verificar se a inscrição já está cancelada
-            if (assignment.Status == VolunteerStatusEnum.CANCELED)
+            if (assignment.Status == VolunteerStatusEnum.CANCELLED)
                 throw new InvalidOperationException("Esta inscrição já está cancelada");
 
             var shiftPosition = await _unitOfWork.ShiftPositions.GetByIdAsync(assignment.ShiftPositionId)
@@ -193,7 +193,7 @@ namespace Volts.Application.Services
 
 
             // Cancelar a inscrição
-            assignment.Status = VolunteerStatusEnum.CANCELED;
+            assignment.Status = VolunteerStatusEnum.CANCELLED;
             assignment.RejectedAt = DateTime.UtcNow;
 
             await _unitOfWork.ShiftPositionAssignment.UpdateAsync(assignment);

@@ -11,5 +11,6 @@ namespace Volts.Domain.Interfaces
     {
         Task<IEnumerable<ShiftPosition>> GetByShiftIdAsync(string shiftId);
         Task<ShiftPosition?> GetWithVolunteersAsync(string id);
+        Task<bool> ExistsForPositionAsync(string positionId);
     }
 }

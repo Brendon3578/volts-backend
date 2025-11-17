@@ -30,6 +30,11 @@ namespace Volts.Infrastructure.Repositories
                 .FirstOrDefaultAsync(sp => sp.Id == id);
         }
 
+        public async Task<bool> ExistsForPositionAsync(string positionId)
+        {
+            return await _dbSet.AnyAsync(p => p.PositionId == positionId);
+        }
+
 
     }
 }

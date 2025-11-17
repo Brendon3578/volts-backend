@@ -216,6 +216,7 @@ namespace Volts.Application.Services
                         Id = sp.Id,
                         PositionId = sp.PositionId,
                         PositionName = sp.Position?.Name ?? string.Empty,
+                        PositionDescription = sp.Position?.Description ?? string.Empty,
                         RequiredCount = sp.RequiredCount,
                         VolunteersCount = sp.VolunteersCount
                     }).ToList() ?? [] // evitar null se nao tiver nada

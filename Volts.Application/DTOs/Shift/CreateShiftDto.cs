@@ -10,7 +10,7 @@ namespace Volts.Application.DTOs.Shift
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public string? Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         public string? Notes { get; set; }
         public string GroupId { get; set; } = string.Empty;
         public List<CreateShiftPositionDto> Positions { get; set; } = new List<CreateShiftPositionDto>();
