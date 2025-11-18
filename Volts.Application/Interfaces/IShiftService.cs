@@ -11,5 +11,6 @@ namespace Volts.Application.Interfaces
         Task<ShiftDto> CreateAsync(CreateShiftDto dto, string userId);
         Task<ShiftDto> UpdateAsync(string id, UpdateShiftDto dto, string userId);
         Task DeleteAsync(string id, string userId);
+        Task<ShiftCompleteViewDto> GetCompleteViewAsync(string shiftId, string userId);
     }
 }

@@ -97,7 +97,7 @@ namespace Volts.Application.Services
             var isAlreadyApplied = existingApplication != null;
 
             if (isAlreadyApplied)
-                throw new InvalidOperationException("Você já se inscreveu para esta posição");
+                throw new InvalidOperationException("Você já se inscreveu para esta posição"); 
 
             // Verificar se o turno já está completo
             var assignments = await _unitOfWork.ShiftPositionAssignment.GetByShiftPositionIdAsync(shiftPositionId);
@@ -166,6 +166,7 @@ namespace Volts.Application.Services
 
         public async Task<ShiftPositionAssignmentDto> CancelAsync(string id, string userId)
         {
+            // TODO: lidar com casos de onde o próprio usuário cancelou, se ele cancelar, apagar ainscrição, se for otura pessoa que cancelou, então ai sim cancelar e impedir
 
             var assignment = await _unitOfWork.ShiftPositionAssignment.GetByIdAsync(id)
                 ?? throw new NotFoundException("Inscrição não encontrada");

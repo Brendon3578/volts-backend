@@ -188,7 +188,7 @@ namespace Volts.Application.Services
         private async Task<bool> UserHasPermissionAsync(string userId, Group group, IEnumerable<OrganizationRoleEnum> allowedRoles)
         {
             var memberShip = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, group.OrganizationId);
-;
+            ;
             return memberShip != null && allowedRoles.Contains(memberShip.Role);
         }
 
@@ -221,6 +221,56 @@ namespace Volts.Application.Services
                         VolunteersCount = sp.VolunteersCount
                     }).ToList() ?? [] // evitar null se nao tiver nada
             };
+        }
+
+        public async Task<ShiftCompleteViewDto> GetCompleteViewAsync(string shiftId, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new UserHasNotPermissionException("User is not authenticated");
+
+            var shift = await _unitOfWork.Shifts.GetShiftCompleteViewAsync(shiftId)
+                ?? throw new NotFoundException("Shift not found");
+
+            var group = await _unitOfWork.Groups.GetByIdAsync(shift.GroupId)
+                ?? throw new NotFoundException("Group not found");
+
+            var membership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, group.OrganizationId);
+            if (membership == null)
+                throw new UserHasNotPermissionException("User does not belong to the organization");
+
+            var dto = new ShiftCompleteViewDto
+            {
+                Id = shift.Id,
+                Title = shift.Title ?? string.Empty,
+                Notes = shift.Notes,
+                StartDate = shift.StartDate,
+                EndDate = shift.EndDate,
+                Status = shift.Status.ToString(),
+                GroupId = shift.GroupId,
+                CreatedAt = shift.CreatedAt,
+                UpdatedAt = shift.UpdatedAt,
+                Positions = shift.ShiftPositions?
+                    .Select(sp => new ShiftPositionCompleteViewDto
+                    {
+                        Id = sp.Id,
+                        PositionId = sp.PositionId,
+                        PositionName = sp.Position?.Name ?? string.Empty,
+                        PositionDescription = sp.Position?.Description ?? string.Empty,
+                        RequiredCount = sp.RequiredCount,
+                        VolunteersCount = sp.Volunteers?.Count(v => v.Status == VolunteerStatusEnum.CONFIRMED) ?? 0,
+                        Volunteers = sp.Volunteers?
+                            .Select(a => new ShiftVolunteerDto
+                            {
+                                Id = a.Id,
+                                UserName = a.User?.Name ?? string.Empty,
+                                UserEmail = a.User?.Email ?? string.Empty,
+                                Notes = a.Notes,
+                                Status = a.Status.ToString()
+                            }).ToList() ?? new List<ShiftVolunteerDto>()
+                    }).ToList() ?? new List<ShiftPositionCompleteViewDto>()
+            };
+
+            return dto;
         }
     }
 }

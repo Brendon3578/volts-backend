@@ -8,7 +8,7 @@ using Volts.Application.Interfaces;
 namespace Volts.Api.Controllers
 {
     [ApiController]
-    [Route("api")]
+    [Route("api/Shifts")] //OBS: aqui foi definido manualmente /Shifts/ TODO: depois melhorar essa rota
     [Authorize]
     public class ShiftPositionAssignmentController : ControllerBase
     {

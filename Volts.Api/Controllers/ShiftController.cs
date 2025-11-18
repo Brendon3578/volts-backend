@@ -45,6 +45,18 @@ namespace Volts.Api.Controllers
             return Ok(shift);
         }
 
+        [HttpGet("{id}/completeView")]
+        [HttpGet("{id}/complete-view")]
+        public async Task<ActionResult<ShiftCompleteViewDto>> GetCompleteView(string id)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var view = await _shiftService.GetCompleteViewAsync(id, userId);
+            return Ok(view);
+        }
+
         [HttpPut("{id}")]
         public async Task<ActionResult<ShiftDto>> Update(string id, [FromBody] UpdateShiftDto dto)
         {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +14,6 @@ namespace Volts.Domain.Interfaces
         Task<IEnumerable<Shift>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
         Task<IEnumerable<Shift>> GetByStatusAsync(ShiftStatusEnum status);
         Task<Shift?> GetWithPositionsAsync(string id);
+        Task<Shift?> GetShiftCompleteViewAsync(string shiftId);
     }
 }

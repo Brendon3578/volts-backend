@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,6 +46,17 @@ namespace Volts.Infrastructure.Repositories
                 .Include(s => s.ShiftPositions)
                     .ThenInclude(sp => sp.Position)
                 .FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public async Task<Shift?> GetShiftCompleteViewAsync(string shiftId)
+        {
+            return await _dbSet
+                .Include(s => s.ShiftPositions)
+                    .ThenInclude(sp => sp.Position)
+                .Include(s => s.ShiftPositions)
+                    .ThenInclude(sp => sp.Volunteers)
+                        .ThenInclude(a => a.User)
+                .FirstOrDefaultAsync(s => s.Id == shiftId);
         }
     }
 }
