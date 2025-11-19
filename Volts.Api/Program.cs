@@ -65,15 +65,15 @@ builder.Services.AddRateLimiter(options =>
 
 // CORS - allow dev frontend
 var devCorsPolicy = "DevCors";
+var origins = Environment.GetEnvironmentVariable("CORS_ORIGINS")?.Split(",") ?? new[] { "http://localhost:5173" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(devCorsPolicy, policy =>
-    {
-        policy.WithOrigins("http://localhost:5173")
-     .AllowAnyHeader()
-     .AllowAnyMethod()
-     .AllowCredentials();
-    });
+        policy.WithOrigins(origins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
 });
 
 // Configuração do DbContext com PostgreSQL (Supabase)
@@ -205,7 +205,7 @@ using (var scope = app.Services.CreateScope())
 
     if (app.Environment.IsDevelopment())
     {
-    // Executa o seed automaticamente na inicialização
+        // Executa o seed automaticamente na inicialização
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
         seeder.SeedAsync().GetAwaiter().GetResult();
     }
@@ -226,7 +226,10 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 // Enable CORS for development
 app.UseCors(devCorsPolicy);
 
-app.UseHttpsRedirection();
+if (app.Environment.IsProduction()) // configuração do Render
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
