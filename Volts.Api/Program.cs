@@ -234,6 +234,8 @@ app.UseAuthorization();
 // Aplicar rate limiting global
 app.UseRateLimiter();
 
+app.MapHealthChecks("/health");
+
 app.MapControllers();
 
 app.Run();

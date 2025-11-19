@@ -1,0 +1,20 @@
+# syntax=docker/dockerfile:1
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY VoltsBackend.sln ./
+COPY Volts.Api/Volts.Api.csproj Volts.Api/
+COPY Volts.Application/Volts.Application.csproj Volts.Application/
+COPY Volts.Infrastructure/Volts.Infrastructure.csproj Volts.Infrastructure/
+COPY Volts.Domain/Volts.Domain.csproj Volts.Domain/
+RUN dotnet restore Volts.Api/Volts.Api.csproj
+COPY . .
+RUN dotnet publish Volts.Api/Volts.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV PORT=8080
+EXPOSE 8080
+COPY --from=build /app/publish .
+CMD ["sh", "-c", "dotnet Volts.Api.dll --urls http://0.0.0.0:$PORT"]
