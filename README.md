@@ -370,4 +370,7 @@ dotnet ef database update --project Volts.Infrastructure --startup-project Volts
 
 # Migration no Production, ou mudar pra Development
 dotnet ef database update --project Volts.Infrastructure --startup-project Volts.Api --environment Production
+
+# Migration em um script
+dotnet ef migrations script --idempotent --project Volts.Infrastructure --startup-project Volts.Api --output POSTGRE_SQL_SCRIPT_MIGRATION.sql
 ```

@@ -18,6 +18,7 @@ namespace Volts.Infrastructure.Repositories
         public async Task<IEnumerable<Shift>> GetByGroupIdWithPositionsAndShiftPositionAsync(string groupId)
         {
             return await _dbSet
+                .Where(g => g.GroupId == groupId)
                 .Include(s => s.ShiftPositions)
                     .ThenInclude(sp => sp.Position)
                 .Include(s => s.ShiftPositions)

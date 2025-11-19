@@ -14,6 +14,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using System.Text.RegularExpressions;
+using Volts.Infrastructure.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -130,6 +131,7 @@ builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IShiftPositionAssignmentService, ShiftPositionAssignmentService>();
+builder.Services.AddScoped<DatabaseSeeder>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"] ??
@@ -199,6 +201,14 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<VoltsDbContext>();
     db.Database.Migrate();
+
+
+    if (app.Environment.IsDevelopment())
+    {
+    // Executa o seed automaticamente na inicialização
+        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        seeder.SeedAsync().GetAwaiter().GetResult();
+    }
 }
 
 

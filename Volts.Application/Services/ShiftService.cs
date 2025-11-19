@@ -218,7 +218,7 @@ namespace Volts.Application.Services
                         PositionName = sp.Position?.Name ?? string.Empty,
                         PositionDescription = sp.Position?.Description ?? string.Empty,
                         RequiredCount = sp.RequiredCount,
-                        VolunteersCount = sp.Volunteers?.Count(v => v.Status == VolunteerStatusEnum.CONFIRMED) ?? 0,
+                        VolunteersCount = sp.Volunteers?.Count(v => v.Status == VolunteerStatusEnum.CONFIRMED || v.Status == VolunteerStatusEnum.PENDING) ?? 0,
                     }).ToList() ?? [] // evitar null se nao tiver nada
             };
         }
@@ -257,7 +257,7 @@ namespace Volts.Application.Services
                         PositionName = sp.Position?.Name ?? string.Empty,
                         PositionDescription = sp.Position?.Description ?? string.Empty,
                         RequiredCount = sp.RequiredCount,
-                        VolunteersCount = sp.Volunteers?.Count(v => v.Status == VolunteerStatusEnum.CONFIRMED) ?? 0,
+                        VolunteersCount = sp.Volunteers?.Count(v => v.Status == VolunteerStatusEnum.CONFIRMED || v.Status == VolunteerStatusEnum.PENDING) ?? 0,
                         Volunteers = sp.Volunteers?
                             .Select(a => new ShiftVolunteerDto
                             {
