@@ -458,5 +458,18 @@ namespace Volts.Application.Services
             await _unitOfWork.OrganizationMembers.UpdateAsync(member);
             await _unitOfWork.SaveChangesAsync();
         }
+
+        public async Task<OrganizationUserRoleDto> GetUserRoleAsync(string organizationId, string userId)
+        {
+            var membership = await _unitOfWork.OrganizationMembers.GetMembershipAsync(userId, organizationId);
+            if (membership == null)
+                throw new NotFoundException("User is not a member of the organization");
+
+            return new OrganizationUserRoleDto
+            {
+                UserId = membership.UserId,
+                Role = membership.Role.ToString()
+            };
+        }
     }
 }

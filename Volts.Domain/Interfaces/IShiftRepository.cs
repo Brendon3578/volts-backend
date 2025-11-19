@@ -10,7 +10,7 @@ namespace Volts.Domain.Interfaces
 {
     public interface IShiftRepository : IRepository<Shift>
     {
-        Task<IEnumerable<Shift>> GetByGroupIdWithPositionsAsync(string groupId);
+        Task<IEnumerable<Shift>> GetByGroupIdWithPositionsAndShiftPositionAsync(string groupId);
         Task<IEnumerable<Shift>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
         Task<IEnumerable<Shift>> GetByStatusAsync(ShiftStatusEnum status);
         Task<Shift?> GetWithPositionsAsync(string id);

@@ -73,6 +73,18 @@ namespace Volts.Api.Controllers
             return Ok(members);
         }
 
+        [HttpGet("{organizationId}/members/self-role")]
+        public async Task<ActionResult<OrganizationUserRoleDto>> GetUserRole(string organizationId)
+        {
+            var userId = User.GetUserId();
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var result = await _organizationService.GetUserRoleAsync(organizationId, userId);
+            return Ok(result);
+        }
+
         [HttpPut("{organizationId}/members/{memberId}/role")]
         [NotLoggedAuthorize]
         public async Task<IActionResult> ChangeMemberRole(string organizationId, string memberId, [FromBody] ChangeOrganizationMemberRoleDto body)

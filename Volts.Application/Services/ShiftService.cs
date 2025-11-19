@@ -25,7 +25,7 @@ namespace Volts.Application.Services
             var group = await _unitOfWork.Groups.GetByIdAsync(groupId)
                 ?? throw new NotFoundException("Group not found");
 
-            var shifts = await _unitOfWork.Shifts.GetByGroupIdWithPositionsAsync(groupId);
+            var shifts = await _unitOfWork.Shifts.GetByGroupIdWithPositionsAndShiftPositionAsync(groupId);
 
             return shifts.Select(MapToDto);
         }
@@ -206,7 +206,7 @@ namespace Volts.Application.Services
                 EndDate = shift.EndDate,
                 Title = shift.Title,
                 Notes = shift.Notes,
-                Status = shift.Status,
+                Status = shift.Status.ToString(),
                 GroupId = shift.GroupId,
                 CreatedAt = shift.CreatedAt,
                 UpdatedAt = shift.UpdatedAt,
@@ -218,7 +218,7 @@ namespace Volts.Application.Services
                         PositionName = sp.Position?.Name ?? string.Empty,
                         PositionDescription = sp.Position?.Description ?? string.Empty,
                         RequiredCount = sp.RequiredCount,
-                        VolunteersCount = sp.VolunteersCount
+                        VolunteersCount = sp.Volunteers?.Count(v => v.Status == VolunteerStatusEnum.CONFIRMED) ?? 0,
                     }).ToList() ?? [] // evitar null se nao tiver nada
             };
         }
@@ -264,6 +264,7 @@ namespace Volts.Application.Services
                                 Id = a.Id,
                                 UserName = a.User?.Name ?? string.Empty,
                                 UserEmail = a.User?.Email ?? string.Empty,
+                                UserId = a.User?.Id ?? string.Empty,
                                 Notes = a.Notes,
                                 Status = a.Status.ToString()
                             }).ToList() ?? new List<ShiftVolunteerDto>()
