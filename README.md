@@ -356,3 +356,18 @@ https://localhost:5001/swagger
 ### Configuração do Ambiente
 
 Para configurar variáveis de ambiente ou outras configurações, edite o arquivo `appsettings.json` ou crie um arquivo `appsettings.Development.json` para configurações específicas de desenvolvimento.
+
+## Comandos úteis
+
+- Criar migration do C# Backend
+
+```bash
+# Criar migration
+dotnet ef migrations add InitialCreate --project Volts.Infrastructure --startup-project Volts.Api
+
+# Atualizar banco
+dotnet ef database update --project Volts.Infrastructure --startup-project Volts.Api
+
+# Migration no Production, ou mudar pra Development
+dotnet ef database update --project Volts.Infrastructure --startup-project Volts.Api --environment Production
+```

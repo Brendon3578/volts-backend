@@ -13,6 +13,7 @@ using Volts.Api.Middleware;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,9 +75,52 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Configurar DbContext com SQLite
+// Configuração do DbContext com PostgreSQL (Supabase)
+// Anterior (SQLite) mantido como referência:
+// builder.Services.AddDbContext<VoltsDbContext>(options =>
+//     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+string BuildPostgresConnectionString()
+{
+    // Tenta usar DATABASE_URL (opcional) no formato: postgres://user:pass@host:port/dbname
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrWhiteSpace(databaseUrl))
+    {
+        // Normaliza para URI
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':');
+        var username = Uri.UnescapeDataString(userInfo[0]);
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var database = uri.AbsolutePath.TrimStart('/');
+
+        // SSL é geralmente exigido no Supabase
+        return $"Host={host};Port={port};Database={database};Username={username};Password={password};Ssl Mode=Require;Trust Server Certificate=true";
+    }
+
+    // Caso contrário, monta a partir das variáveis SUPABASE_*
+    var hostEnv = Environment.GetEnvironmentVariable("SUPABASE_DB_HOST");
+    var portEnv = Environment.GetEnvironmentVariable("SUPABASE_DB_PORT") ?? "5432";
+    var userEnv = Environment.GetEnvironmentVariable("SUPABASE_DB_USER");
+    var passEnv = Environment.GetEnvironmentVariable("SUPABASE_DB_PASSWORD");
+    var nameEnv = Environment.GetEnvironmentVariable("SUPABASE_DB_NAME");
+
+    // Se não houver variáveis, tenta appsettings: ConnectionStrings:PostgresConnection
+    var appsettingsConn = builder.Configuration.GetConnectionString("PostgresConnection");
+    if (!string.IsNullOrWhiteSpace(appsettingsConn))
+        return appsettingsConn;
+
+    if (string.IsNullOrWhiteSpace(hostEnv) || string.IsNullOrWhiteSpace(userEnv) || string.IsNullOrWhiteSpace(passEnv) || string.IsNullOrWhiteSpace(nameEnv))
+        throw new InvalidOperationException("PostgreSQL connection is not configured. Set SUPABASE_DB_* env vars or DATABASE_URL, or provide ConnectionStrings:PostgresConnection.");
+
+    return $"Host={hostEnv};Port={portEnv};Database={nameEnv};Username={userEnv};Password={passEnv};Ssl Mode=Require;Trust Server Certificate=true";
+}
+
+var postgresConnectionString = BuildPostgresConnectionString();
+
 builder.Services.AddDbContext<VoltsDbContext>(options =>
- options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(postgresConnectionString));
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>(); // todos os repositories est�o aqui
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -150,11 +194,11 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-// Criar banco de dados automaticamente
+// Aplicar migrações automaticamente (requer migrations criadas para PostgreSQL)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<VoltsDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 }
 
 

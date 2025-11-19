@@ -11,7 +11,7 @@ namespace Volts.Infrastructure.Data
 {
     public class VoltsDbContext : DbContext
     {
-        public VoltsDbContext(DbContextOptions options) : base(options)
+        public VoltsDbContext(DbContextOptions<VoltsDbContext> options) : base(options)
         {
         }
 
