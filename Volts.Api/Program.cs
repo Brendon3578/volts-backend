@@ -226,7 +226,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 // Enable CORS for development
 app.UseCors(devCorsPolicy);
 
-if (app.Environment.IsProduction()) // configuração do Render
+if (app.Environment.IsProduction() == false) // configuração do Render
 {
     app.UseHttpsRedirection();
 }
