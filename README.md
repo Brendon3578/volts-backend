@@ -330,26 +330,21 @@ Relações principais (com RBAC por organização):
 
 ```bash
 # 1. Clone o repositório:
-
 git clone https://github.com/seu-usuario/volts-backend.git
 
 cd volts-backend
 
 # 2. Restaure os pacotes:
-
 dotnet restore
 
 # 3. Execute as migrações do banco de dados:
-
 cd Volts.Api
 dotnet ef database update
 
 # 4. Execute o projeto:
-
 dotnet run
 
 # 5. Acesse a documentação da API:
-
 https://localhost:5001/swagger
 ```
 
