@@ -78,5 +78,17 @@ namespace Volts.Api.Controllers
             await _shiftService.DeleteAsync(id, userId);
             return NoContent();
         }
+
+        [HttpPut("{id}/change-status")]
+        public async Task<ActionResult> UpdateStatus(string id, [FromBody] UpdateShiftStatusDto dto)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            await _shiftService.UpdateShiftStatusAsync(id, dto, userId);
+
+            return NoContent();
+        }
     }
 }

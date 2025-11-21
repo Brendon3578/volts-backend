@@ -121,7 +121,8 @@ namespace Volts.Application.Services
                 if (dto.EndDate.HasValue) shift.EndDate = dto.EndDate.Value;
                 if (!string.IsNullOrEmpty(dto.Title)) shift.Title = dto.Title;
                 if (!string.IsNullOrEmpty(dto.Notes)) shift.Notes = dto.Notes;
-                if (dto.Status.HasValue) shift.Status = dto.Status.Value;
+
+                shift.Status = ShiftStatusEnum.OPEN; // abrir novamente
 
                 await _unitOfWork.Shifts.UpdateAsync(shift);
                 await _unitOfWork.SaveChangesAsync();
@@ -272,6 +273,27 @@ namespace Volts.Application.Services
             };
 
             return dto;
+        }
+
+        public async Task UpdateShiftStatusAsync(string id, UpdateShiftStatusDto dto, string userId)
+        {
+            var shift = await _unitOfWork.Shifts.GetByIdAsync(id)
+                ?? throw new NotFoundException("Shift not found");
+
+            var group = await _unitOfWork.Groups.GetByIdAsync(shift.GroupId)
+                ?? throw new NotFoundException("Group not found");
+
+            if (await IsAdminOrLeader(userId, group) == false)
+                throw new UserHasNotPermissionException("User is not leader or coordinator");
+
+            if (!Enum.TryParse<ShiftStatusEnum>(dto.NewStatus, true, out var shiftStatus))
+                throw new ArgumentException("Invalid status provided");
+
+            shift.Status = shiftStatus;
+
+            await _unitOfWork.Shifts.UpdateAsync(shift);
+
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

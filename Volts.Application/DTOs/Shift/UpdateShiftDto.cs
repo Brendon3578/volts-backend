@@ -13,7 +13,6 @@ namespace Volts.Application.DTOs.Shift
         public DateTime? EndDate { get; set; }
         public string? Title { get; set; }
         public string? Notes { get; set; }
-        public ShiftStatusEnum? Status { get; set; }
         public List<CreateShiftPositionDto>? Positions { get; set; }
     }
 }
