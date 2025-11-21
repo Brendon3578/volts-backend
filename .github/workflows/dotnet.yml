@@ -11,14 +11,11 @@ jobs:
   deploy: ## nome do jobs
     runs-on: ubuntu-latest
 
-    env: ## variavel de ambiente do github
-      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-
     steps:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Trigger deploy hook in Render
+      - name: Deploy to Render
         run: |
-          curl -X POST "$RENDER_DEPLOY_HOOK"
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
 
