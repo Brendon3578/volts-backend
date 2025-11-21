@@ -8,19 +8,21 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env: 
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
 
       - name: Validate Render deploy hook environment variable
         run: |
-          echo "${{ secrets.RENDER_DEPLOY_HOOK }}"
-          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
             echo "ERROR: RENDER_DEPLOY_HOOK is not set."
             exit 1
           else
-            echo "Render deploy hook detected (value hidden)."
+            echo "Render deploy hook detected (hidden)."
           fi
 
       - name: Trigger Render deploy hook
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: curl -X POST "$RENDER_DEPLOY_HOOK"
