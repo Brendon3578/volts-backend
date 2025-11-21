@@ -20,5 +20,5 @@ jobs:
 
       - name: Trigger deploy hook in Render
         run: |
-          curl -X POST "$RENDER_DEPLOY_HOOK"
+          curl -X POST $RENDER_DEPLOY_HOOK
 
