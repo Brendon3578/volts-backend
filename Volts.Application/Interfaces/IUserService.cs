@@ -13,8 +13,8 @@ namespace Volts.Application.Interfaces
         Task<UserDto?> GetUserByIdAsync(string id);
         Task<UserDto?> GetUserByEmailAsync(string email);
         Task<UserDto> CreateUserAsync(CreateUserDto dto);
-        Task<UserDto> UpdateUserAsync(string id, UpdateUserDto dto);
         Task DeleteUserAsync(string id);
         Task<List<UserOrganizationWithGroupsDto>> GetUserOrganizationsAndGroupsAsync(string userId);
+        Task<UserDto> UpdateUserProfileAsync(string userId, UpdateUserProfileDto dto);
     }
 }

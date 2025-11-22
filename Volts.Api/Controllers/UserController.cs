@@ -33,32 +33,25 @@ namespace Volts.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserDto>> GetMe()
         {
-            try
+            // Obter ID do usuário do token JWT
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
-                // Obter ID do usuário do token JWT
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                    ?? User.FindFirst("sub")?.Value;
-
-                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new { message = "Token inválido" });
-                }
-
-                var user = await _userService.GetUserByIdAsync(userId.ToString());
-
-                if (user == null)
-                {
-                    return NotFound(new { message = "Usuário não encontrado" });
-                }
-
-                return Ok(user);
+                return Unauthorized(new { message = "Token inválido" });
             }
-            catch (Exception ex)
+
+            var user = await _userService.GetUserByIdAsync(userId.ToString());
+
+            if (user == null)
             {
-                _logger.LogError(ex, "Erro ao buscar dados do usuário");
-                return StatusCode(500, new { message = "Erro interno do servidor" });
+                return NotFound(new { message = "Usuário não encontrado" });
             }
+
+            return Ok(user);
         }
+
         /// <summary>
         /// Retorna todas as organizações e grupos do usuário autenticado
         /// </summary>
@@ -74,6 +67,23 @@ namespace Volts.Api.Controllers
 
             var result = await _userService.GetUserOrganizationsAndGroupsAsync(userId);
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Atualiza o perfil do usuário autenticado
+        /// </summary>
+        [HttpPut("me")]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<UserDto>> UpdateMe([FromBody] UpdateUserProfileDto dto)
+        {
+            var userId = User.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token inválido" });
+
+            var updated = await _userService.UpdateUserProfileAsync(userId, dto);
+            return Ok(updated);
         }
     }
 }

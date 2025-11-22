@@ -54,16 +54,31 @@ namespace Volts.Application.Services
             return MapToDto(user);
         }
 
-        public async Task<UserDto> UpdateUserAsync(string id, UpdateUserDto dto)
+        public async Task<UserDto> UpdateUserProfileAsync(string userId, UpdateUserProfileDto dto)
         {
-            var user = await _unitOfWork.Users.GetByIdAsync(id);
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID inválido.", nameof(userId));
 
-            if (user == null)
-                throw new KeyNotFoundException($"User with ID {id} not found");
+            var user = await _unitOfWork.Users.GetByIdAsync(userId)
+                ?? throw new NotFoundException($"User with ID {userId} not found");
 
-            if (dto.Name != null) user.Name = dto.Name;
-            if (dto.Phone != null) user.Phone = dto.Phone;
-            if (dto.Bio != null) user.Bio = dto.Bio;
+            if (dto.Name != null)
+            {
+                var trimmed = dto.Name.Trim();
+                if (trimmed.Length == 0)
+                    throw new ArgumentException("Name cannot be empty or whitespace.", nameof(dto.Name));
+
+                user.Name = trimmed;
+            }
+
+            if (dto.Phone != null)
+                user.Phone = dto.Phone.Trim();
+
+            if (dto.Bio != null)
+                user.Bio = dto.Bio.Trim();
+
+            if (dto.Birthdate != null) user.Birthdate = (DateTime)dto.Birthdate;
+            if (dto.Gender != null) user.Gender = dto.Gender;
 
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
@@ -87,7 +102,9 @@ namespace Volts.Application.Services
                 Phone = user.Phone,
                 Bio = user.Bio,
                 CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
+                UpdatedAt = user.UpdatedAt,
+                Gender = user.Gender,
+                Birthdate = user.Birthdate
             };
         }
 
@@ -99,23 +116,23 @@ namespace Volts.Application.Services
 
             // Buscar todas as organizações do usuário
             var organizationMembers = await _unitOfWork.OrganizationMembers.GetWithMemberByUserIdAsync(userId);
-            
+
             var result = new List<UserOrganizationWithGroupsDto>();
-            
+
             foreach (var orgMember in organizationMembers)
             {
 
                 var organization = orgMember.Organization;
-                    
+
                 if (organization == null) continue;
-                
+
                 var orgDto = new UserOrganizationWithGroupsDto
                 {
                     OrganizationId = organization.Id,
                     OrganizationName = organization.Name,
                     OrganizationDescription = organization.Description ?? string.Empty,
                     OrganizationUserRole = orgMember.Role.ToString(),
-                    Groups = []
+                    Groups = new List<SimpleGroupsDto>()
                 };
 
                 // Buscar grupos do usuário nesta organização
@@ -127,11 +144,11 @@ namespace Volts.Application.Services
                     GroupDescription = g.Description ?? string.Empty,
                     GroupColor = g.Color,
                     GroupIcon = g.Icon,
-                }).ToList() ?? [];
-                
+                }).ToList() ?? new List<SimpleGroupsDto>();
+
                 result.Add(orgDto);
             }
-            
+
             return result;
         }
     }
