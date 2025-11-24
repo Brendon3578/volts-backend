@@ -188,9 +188,55 @@ Mantém o status da inscrição (pendente, confirmado, rejeitado) e eventuais ob
    Um usuário pode se inscrever em diversas posições de diversas escalas.  
    Cada inscrição está sempre vinculada a um único usuário.
 
----
+## Estrutura do Projeto
 
-Se quiser, posso gerar uma **versão expandida**, com diagrama mermaid + tabela por entidade + explicação de fluxo de negócios.
+O projeto segue uma arquitetura em camadas:
+
+- **Controllers (Volts.Api)**: Responsáveis por receber as requisições HTTP e retornar as respostas
+- **Services (Volts.Application)**: Implementam a lógica de negócio e orquestram as operações
+- **Repositories (Volts.Infrastructure)**: Responsáveis pelo acesso aos dados
+- **Entities (Volts.Domain)**: Definem o modelo de domínio e as regras de negócio
+- **DTOs (Volts.Application)**: Objetos de transferência de dados entre as camadas
+
+## Modelo de Dados (ER) - Atual
+
+Relações principais (com RBAC por organização):
+
+- `Organization` - possui muitos `Group`.
+- `Group` - possui muitas `Position` e muitas `Shift`.
+- `Shift` - possui muitos `ShiftPosition`.
+- `ShiftPosition` - possui muitos `ShiftPositionAssignment`.
+- `User` - possui muitas `OrganizationMember` (um papel por organização).
+- `User` - relaciona com `ShiftPositionAssignment` (se inscreve nas posições).
+
+## 🔐 Controle de Acesso (RBAC)
+
+### Descrição Geral
+
+- O projeto utiliza RBAC (Role-Based Access Control) para controlar o que cada usuário pode fazer dentro da aplicação.
+- O controle é dividido entre níveis de organização e níveis de grupo, cada um com papéis e permissões específicos.
+
+### Papéis da Organização (OrganizationRoleEnum)
+
+- **ADMIN**: possui acesso total à organização. Pode gerenciar usuários, grupos e configurações.
+- **LEADER**: pode criar e gerenciar grupos dentro da organização.
+- **MEMBER**: participa de grupos, mas sem permissões administrativas, apenas se aplica/voluntaria nas escalas dos grupos.
+
+### Regras de Negócio Principais
+
+- **ADMIN** e **LEADER** podem criar grupos dentro da organização.
+- Dentro dos grupos, apenas o **ADMIN** e **LEADER** podem criar posições e escalas.
+- **VOLUNTEERS** podem visualizar e se inscrever nas posições das escalas.
+
+## 🧰 Tecnologias Utilizadas
+
+- **Linguagem principal:** C#
+- **Framework:** .NET Core 8
+- **Banco de dados:** PostgreSQL (com suporte futuro via Supabase)
+- **ORM:** Entity Framework Core
+- **Autenticação:** JWT (JSON Web Token)
+- **Padrões de arquitetura:** Repository Pattern, Unit of Work, DTOs e Services
+- **Outras:** Swagger
 
 ## Rotas da API
 
@@ -268,56 +314,6 @@ Observação de rota:
 - `PUT /api/assignments/{id}/confirm` - Confirma inscrição (permite `LEADER`/`ADMIN`).
 - `PUT /api/assignments/{id}/cancel` - Cancela inscrição (autor da inscrição ou `LEADER`/`ADMIN`).
 - `DELETE /api/assignments/{id}` - Deleta inscrição (autor da inscrição ou `LEADER`/`ADMIN`).
-
-## Estrutura do Projeto
-
-O projeto segue uma arquitetura em camadas:
-
-- **Controllers (Volts.Api)**: Responsáveis por receber as requisições HTTP e retornar as respostas
-- **Services (Volts.Application)**: Implementam a lógica de negócio e orquestram as operações
-- **Repositories (Volts.Infrastructure)**: Responsáveis pelo acesso aos dados
-- **Entities (Volts.Domain)**: Definem o modelo de domínio e as regras de negócio
-- **DTOs (Volts.Application)**: Objetos de transferência de dados entre as camadas
-
-## Modelo de Dados (ER) - Atual
-
-Relações principais (com RBAC por organização):
-
-- `Organization` - possui muitos `Group`.
-- `Group` - possui muitas `Position` e muitas `Shift`.
-- `Shift` - possui muitos `ShiftPosition`.
-- `ShiftPosition` - possui muitos `ShiftPositionAssignment`.
-- `User` - possui muitas `OrganizationMember` (um papel por organização).
-- `User` - relaciona com `ShiftPositionAssignment` (se inscreve nas posições).
-
-## 🔐 Controle de Acesso (RBAC)
-
-### Descrição Geral
-
-- O projeto utiliza RBAC (Role-Based Access Control) para controlar o que cada usuário pode fazer dentro da aplicação.
-- O controle é dividido entre níveis de organização e níveis de grupo, cada um com papéis e permissões específicos.
-
-### Papéis da Organização (OrganizationRoleEnum)
-
-- **ADMIN**: possui acesso total à organização. Pode gerenciar usuários, grupos e configurações.
-- **LEADER**: pode criar e gerenciar grupos dentro da organização.
-- **MEMBER**: participa de grupos, mas sem permissões administrativas, apenas se aplica/voluntaria nas escalas dos grupos.
-
-### Regras de Negócio Principais
-
-- **ADMIN** e **LEADER** podem criar grupos dentro da organização.
-- Dentro dos grupos, apenas o **ADMIN** e **LEADER** podem criar posições e escalas.
-- **VOLUNTEERS** podem visualizar e se inscrever nas posições das escalas.
-
-## 🧰 Tecnologias Utilizadas
-
-- **Linguagem principal:** C#
-- **Framework:** .NET Core 8
-- **Banco de dados:** PostgreSQL (com suporte futuro via Supabase)
-- **ORM:** Entity Framework Core
-- **Autenticação:** JWT (JSON Web Token)
-- **Padrões de arquitetura:** Repository Pattern, Unit of Work, DTOs e Services
-- **Outras:** Swagger
 
 ## Como Rodar o Projeto
 
