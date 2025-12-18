@@ -1,5 +1,14 @@
 # Volts Backend - .NET Core Web API
 
+![C#](https://img.shields.io/badge/c%23-9956f6.svg?style=for-the-badge&logo=c%2B%2B&logoColor=191919)
+![.Net](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Render](https://img.shields.io/badge/Render-%46E3B7.svg?style=for-the-badge&logo=render&logoColor=white)
+![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
+
 ## Integrantes
 
 - Adriano Barros
@@ -24,6 +33,16 @@ As principais entidades do sistema se relacionam da seguinte forma:
 - **Escalas (Shifts)**: Períodos de trabalho com data, hora e local definidos
 - **Posições (Positions)**: Funções específicas que podem ser ocupadas por voluntários
 - **Inscrições (ShiftPositionAssignments)**: Registros de voluntários inscritos para trabalhar em posições específicas
+
+## 🧰 Tecnologias Utilizadas
+
+- **Linguagem principal:** C#
+- **Framework:** .NET Core 8
+- **Banco de dados:** PostgreSQL (com suporte futuro via Supabase)
+- **ORM:** Entity Framework Core
+- **Autenticação:** JWT (JSON Web Token)
+- **Padrões de arquitetura:** Repository Pattern, Unit of Work, DTOs e Services
+- **Outras:** Swagger
 
 ## Modelo de Domínio do Volts
 
@@ -227,16 +246,6 @@ Relações principais (com RBAC por organização):
 - **ADMIN** e **LEADER** podem criar grupos dentro da organização.
 - Dentro dos grupos, apenas o **ADMIN** e **LEADER** podem criar posições e escalas.
 - **VOLUNTEERS** podem visualizar e se inscrever nas posições das escalas.
-
-## 🧰 Tecnologias Utilizadas
-
-- **Linguagem principal:** C#
-- **Framework:** .NET Core 8
-- **Banco de dados:** PostgreSQL (com suporte futuro via Supabase)
-- **ORM:** Entity Framework Core
-- **Autenticação:** JWT (JSON Web Token)
-- **Padrões de arquitetura:** Repository Pattern, Unit of Work, DTOs e Services
-- **Outras:** Swagger
 
 ## Rotas da API
 
