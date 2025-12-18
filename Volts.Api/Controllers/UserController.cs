@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Volts.Api.Attributes;
 using Volts.Api.Extensions;
+using Volts.Application.DTOs.Common;
 using Volts.Application.DTOs.Group;
 using Volts.Application.DTOs.User;
 using Volts.Application.Interfaces;
@@ -39,14 +40,14 @@ namespace Volts.Api.Controllers
 
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
             }
 
             var user = await _userService.GetUserByIdAsync(userId.ToString());
 
             if (user == null)
             {
-                return NotFound(new { message = "Usuário não encontrado" });
+                return NotFound(new ErrorMessageDto { message = "Usuário não encontrado" });
             }
 
             return Ok(user);
@@ -63,7 +64,7 @@ namespace Volts.Api.Controllers
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var result = await _userService.GetUserOrganizationsAndGroupsAsync(userId);
             return Ok(result);
@@ -80,7 +81,7 @@ namespace Volts.Api.Controllers
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var updated = await _userService.UpdateUserProfileAsync(userId, dto);
             return Ok(updated);

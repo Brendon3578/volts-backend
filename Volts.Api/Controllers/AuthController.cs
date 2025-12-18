@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Volts.Application.DTOs.Authentication;
+using Volts.Application.DTOs.Common;
 using Volts.Application.Interfaces;
+using Microsoft.AspNetCore.Http;
 
 namespace Volts.Api.Controllers
 {
@@ -23,6 +25,7 @@ namespace Volts.Api.Controllers
         [HttpPost("register")]
         [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Register([FromBody] RegisterUserDto registerDto)
         {
             try
@@ -30,6 +33,7 @@ namespace Volts.Api.Controllers
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(new
+                    ErrorMessageDto
                     {
                         message = "Dados inválidos",
                         errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage))
@@ -57,7 +61,7 @@ namespace Volts.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao cadastrar usuário");
-                return StatusCode(500, new { message = "Erro interno do servidor" });
+                return StatusCode(500, new ErrorMessageDto { message = "Erro interno do servidor" });
             }
         }
 
@@ -92,7 +96,7 @@ namespace Volts.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Tentativa de login falhou para: {Email}", loginDto.Email);
-                return BadRequest(new { message = "Erro ao realizar Login!" });
+                return BadRequest(new ErrorMessageDto { message = "Erro ao realizar Login!" });
             }
 
         }

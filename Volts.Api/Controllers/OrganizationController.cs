@@ -4,10 +4,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Volts.Api.Attributes;
 using Volts.Api.Extensions;
+using Volts.Application.DTOs.Common;
 using Volts.Application.DTOs.Group;
 using Volts.Application.DTOs.Organization;
 using Volts.Application.Interfaces;
 using Volts.Domain.Enums;
+using Microsoft.AspNetCore.Http;
 
 namespace Volts.Api.Controllers
 {
@@ -26,11 +28,13 @@ namespace Volts.Api.Controllers
 
         [HttpPost("{id}/invite-member")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(typeof(OrganizationMemberDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<OrganizationMemberDto>> InviteMember(string id, [FromBody] InviteUserOrganizationDto dto)
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var result = await _organizationService.InviteMemberAsync(id, dto, userId);
             return Ok(result);
@@ -38,11 +42,14 @@ namespace Volts.Api.Controllers
 
         [HttpGet("{id}/completeView")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<OrganizationCompleteViewDto>> GetCompleteViewById(string id)
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var org = await _organizationService.GetOrganizationCompleteViewByIdAsync(id, userId);
             if (org == null) return NotFound();
@@ -51,11 +58,13 @@ namespace Volts.Api.Controllers
 
         [HttpGet("completeView")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<OrganizationCompleteViewDto>>> GetCompleteViewList()
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var orgs = await _organizationService.GetOrganizationsCompleteViewAsync(userId);
             return Ok(orgs);
@@ -63,23 +72,27 @@ namespace Volts.Api.Controllers
 
         [HttpGet("{organizationId}/members")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<OrganizationMemberDto>>> GetMembers(string organizationId)
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var members = await _organizationService.GetOrganizationMembersAsync(organizationId);
             return Ok(members);
         }
 
         [HttpGet("{organizationId}/members/self-role")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<OrganizationUserRoleDto>> GetUserRole(string organizationId)
         {
             var userId = User.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var result = await _organizationService.GetUserRoleAsync(organizationId, userId);
             return Ok(result);
@@ -87,11 +100,13 @@ namespace Volts.Api.Controllers
 
         [HttpPut("{organizationId}/members/{memberId}/role")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> ChangeMemberRole(string organizationId, string memberId, [FromBody] ChangeOrganizationMemberRoleDto body)
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             await _organizationService.ChangeOrganizationMemberRoleAsync(organizationId, memberId, body.Role, userId);
             return Ok();
@@ -106,12 +121,14 @@ namespace Volts.Api.Controllers
 
         [HttpGet("available")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<OrganizationDto>>> GetAllAvailable()
         {
             var userId = User.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var organizations = await _organizationService.GetAllOrganizationsAvailableAsync(userId);
             return Ok(organizations);
@@ -134,11 +151,13 @@ namespace Volts.Api.Controllers
 
         [HttpGet("{organizationId}/Groups/completeView")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<GroupCompleteViewDto>> GetGroupCompleteViewByOrganizationId(string organizationId)
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var groups = await _groupService.GetGroupsCompleteViewByOrganizationidAsync(organizationId, userId);
             return Ok(groups);
@@ -156,12 +175,14 @@ namespace Volts.Api.Controllers
 
         [HttpGet("me")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<OrganizationDto>>> GetOrganizationsForCurrentUserAsync()
         {
             var userId = User.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var orgs = await _organizationService.GetOrganizationsForCurrentUserAsync(userId);
 
@@ -172,12 +193,14 @@ namespace Volts.Api.Controllers
 
         [HttpPost]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<OrganizationDto>> Create([FromBody] CreateOrganizationDto dto)
         {
             var userId = User.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
 
             var organization = await _organizationService.CreateOrganizationAsync(dto, userId);
@@ -187,12 +210,14 @@ namespace Volts.Api.Controllers
 
         [HttpPut("{id}")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<OrganizationDto>> Update(string id, [FromBody] UpdateOrganizationDto dto)
         {
             var userId = User.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             var organization = await _organizationService.UpdateOrganizationAsync(id, dto, userId);
             return Ok(organization);
@@ -200,12 +225,14 @@ namespace Volts.Api.Controllers
 
         [HttpDelete("{id}")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Delete(string id)
         {
             var userId = User.GetUserId();
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             await _organizationService.DeleteOrganizationAsync(id, userId);
             return NoContent();
@@ -213,11 +240,13 @@ namespace Volts.Api.Controllers
 
         [HttpPost("{id}/join")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Join(string id)
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             await _organizationService.JoinAsync(id, userId);
             return Ok();
@@ -225,11 +254,14 @@ namespace Volts.Api.Controllers
 
         [HttpPost("{id}/leave")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
+        
         public async Task<IActionResult> Leave(string id)
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             await _organizationService.LeaveAsync(id, userId);
             return Ok();
@@ -238,11 +270,13 @@ namespace Volts.Api.Controllers
         // TODO: validar de quando deletar único admin, deletar a organização
         [HttpDelete("{organizationId}/members/{memberId}")]
         [NotLoggedAuthorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErrorMessageDto), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> RemoveMember(string organizationId, string memberId)
         {
             var userId = User.GetUserId();
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { message = "Token inválido" });
+                return Unauthorized(new ErrorMessageDto { message = "Token inválido" });
 
             await _organizationService.RemoveMemberAsync(organizationId, memberId, userId);
             return NoContent();
