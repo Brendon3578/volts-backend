@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+
+  db:
+    image: postgres:16
+    container_name: volts-db
+    environment:
+      POSTGRES_USER: volts
+      POSTGRES_PASSWORD: volts
+      POSTGRES_DB: volts-test
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./POSTGRE_SQL_SCRIPT_MIGRATION.sql:/docker-entrypoint-initdb.d/01_migration.sql
+    networks:
+      - volts-net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: volts-api
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=volts-test;Username=volts;Password=volts"
+    depends_on:
+      - db
+    networks:
+      - volts-net
+
+volumes:
+  dbdata:
+
+networks:
+  volts-net:

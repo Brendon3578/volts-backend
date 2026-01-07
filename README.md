@@ -44,6 +44,45 @@ As principais entidades do sistema se relacionam da seguinte forma:
 - **Padrões de arquitetura:** Repository Pattern, Unit of Work, DTOs e Services
 - **Outras:** Swagger
 
+## 🐳 Docker e Deploy
+
+O projeto utiliza Docker para facilitar o desenvolvimento local e o deploy em produção. Existem duas abordagens principais configuradas no repositório:
+
+### 1️⃣ Docker Compose (Ambiente de Desenvolvimento Local)
+
+O arquivo `docker-compose.yml` foi configurado para **facilitar testes locais**, permitindo subir a aplicação completa sem a necessidade de instalar dependências (como o banco de dados) diretamente na máquina.
+
+- **Cenário de Uso**
+  - Testes locais e desenvolvimento.
+  - Quando você precisa da API rodando junto com uma instância limpa do PostgreSQL.
+
+- **Estrutura:**
+  - **Serviço `api`**: Constrói a imagem da aplicação a partir do `Dockerfile` e a executa na porta `8080`.
+  - **Serviço `db`**: Sobe um container PostgreSQL (versão 16) pré-configurado com usuário e banco de dados de teste (`volts-test`).
+  - **Rede**: Ambos os serviços compartilham a rede `volts-net` para comunicação interna.
+
+#### Como executar
+
+```bash
+docker-compose up --build
+```
+
+### 2️⃣ Dockerfile (Deploy no Render)
+
+O `Dockerfile` na raiz do projeto é utilizado principalmente para o **deploy em produção**, especificamente na plataforma **Render** (como Web Service).
+
+- **Cenário de Uso**
+  - Hospedagem da aplicação em ambiente de produção (Cloud).
+  - Criação da imagem final otimizada para execução.
+
+- **Estrutura**
+  - **Build Stage**: Utiliza a imagem `dotnet/sdk:8.0` para restaurar dependências e compilar o projeto (`dotnet publish`).
+  - **Runtime Stage**: Utiliza a imagem `dotnet/aspnet:8.0` (mais leve) apenas para executar a aplicação.
+  - **Configuração**: Define a variável de ambiente `ASPNETCORE_ENVIRONMENT=Production` e expõe a porta `8080` (configurável via variável `PORT`, padrão do Render).
+
+**Fluxo no Render:**
+O Render detecta o `Dockerfile`, constrói a imagem e inicia o container executando o comando definido no `CMD`.
+
 ## Modelo de Domínio do Volts
 
 O diagrama abaixo representa as principais entidades do sistema Volts e seus relacionamentos.
